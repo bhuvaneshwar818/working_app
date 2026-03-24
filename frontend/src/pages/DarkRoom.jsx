@@ -8,10 +8,11 @@ import './DarkRoom.css';
 import './ChatPage.css';
 import ThemeToggle from '../components/ThemeToggle';
 import CameraCropper from '../components/CameraCropper';
-import AlertModal from '../components/AlertModal';
+import { useToast } from '../context/ToastContext';
 
 export default function DarkRoom() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [view, setView] = useState('dashboard');
   
   const [rooms, setRooms] = useState([]);
@@ -23,9 +24,6 @@ export default function DarkRoom() {
   const [error, setError] = useState('');
   const [handshakeStatus, setHandshakeStatus] = useState(''); 
   
-  const [customAlert, setCustomAlert] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-  const showAlert = (title, message, type='info') => setCustomAlert({ isOpen: true, title, message, type });
-  const closeAlert = () => setCustomAlert({ ...customAlert, isOpen: false });
 
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
@@ -83,8 +81,8 @@ export default function DarkRoom() {
         // Subscribe to global status queue implicitly
         client.subscribe('/user/queue/darkroom-status', (msg) => {
           loadRooms();
-          if (msg.body === 'READY') showAlert("Connection Secured", "Secure Link Established. Vault is tightly sealed and ready.", "success");
-          if (msg.body === 'ACCEPTED') showAlert("Key Engaged", "Your peer has locked their encryption key. Finalize the vault now.", "info");
+          if (msg.body === 'READY') toast.success("Secure Link Established. Vault is tightly sealed and ready.");
+          if (msg.body === 'ACCEPTED') toast.info("Peer has locked their encryption key. Finalize the vault now.");
         });
       },
       onDisconnect: () => {
@@ -122,12 +120,12 @@ export default function DarkRoom() {
                setView('chat'); 
            }, 1000);
         } else if (msg.body === 'COLLAPSED') {
-           showAlert("Critical Warning", "Peer disconnected abruptly. Vault collapsed globally.", "error");
+           toast.error("Peer disconnected abruptly. Vault collapsed globally.");
            handleLeaveRoom();
         } else if (msg.body.startsWith('WAITING_FOR_PEER_')) {
            const peer = msg.body.split('WAITING_FOR_PEER_')[1];
            if (peer !== username) {
-              showAlert("Priority Alarm", `${peer} is waiting locally. Turn your key!`, "warning");
+              toast.warning(`${peer} is waiting locally. Turn your key!`);
            }
         }
      });
@@ -323,7 +321,7 @@ export default function DarkRoom() {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-          showAlert("Size Limit Exceeded", "Maximum encrypted payload is 5MB.", "error");
+          toast.error("Size Limit Exceeded: Maximum encrypted payload is 5MB.");
           return;
       }
       const reader = new FileReader();
@@ -584,7 +582,6 @@ export default function DarkRoom() {
             }} 
          />
       )}
-      <AlertModal {...customAlert} onClose={closeAlert} />
     </div>
   );
 }

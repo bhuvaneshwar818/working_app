@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, ArrowLeft, Save, Edit3, Settings, Camera, Lock, EyeOff, Eye } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
-import AlertModal from '../components/AlertModal';
+import { useToast } from '../context/ToastContext';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   
@@ -47,7 +48,7 @@ export default function ProfilePage() {
         allowIncomingRequests: res.data.allowIncomingRequests !== false
       });
     } catch (err) {
-      showAlert('Error fetching profile', err.response?.data?.message || err.message, 'error');
+      toast.error(err.response?.data?.message || err.message || 'Error fetching profile');
     }
   };
 
@@ -58,26 +59,25 @@ export default function ProfilePage() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (formData.email !== profile.email) {
-       showAlert('OTP Required', 'An OTP has been sent to your old email. Please verify it to change your email.', 'info');
+       toast.info('Verification Required. An OTP has been sent to your old email.');
        // Mocking the OTP verification for email change per requirements
        setTimeout(() => {
-          showAlert('OTP Verified', 'Email change authorized.', 'success');
+          toast.success('Email change authorized.');
           saveProfileData();
        }, 2000);
     } else {
        saveProfileData();
     }
   };
-
   const saveProfileData = async () => {
     try {
       await api.put('/users/profile', formData);
       localStorage.setItem('evaporateTime', evaporateTime);
-      showAlert('Profile Updated', 'Your profile details and settings have been securely saved.', 'success');
+      toast.success('Profile configurations locked successfully.');
       setIsEditing(false);
       fetchProfile();
     } catch (err) {
-      showAlert('Update Failed', err.response?.data?.message || 'Could not update profile', 'error');
+      toast.error('Identity update failed.');
     }
   };
 
@@ -86,7 +86,7 @@ export default function ProfilePage() {
     if (file) {
        // Validate size to comfortably fit inside LONGTEXT efficiently
        if(file.size > 2 * 1024 * 1024) {
-           showAlert('File Too Large', 'Please upload a picture mathematically smaller than 2MB.', 'error');
+           toast.error('Identity badge too large. Limit is 2MB.');
            return;
        }
        const reader = new FileReader();
@@ -101,20 +101,20 @@ export default function ProfilePage() {
   const submitPassChange = async (e) => {
     e.preventDefault();
     if(passState.newPassword !== passState.confirmNewPassword) {
-       showAlert('Password Mismatch', 'New passwords do not securely match!', 'error');
+       toast.error('New passwords do not securely match!');
        return;
     }
     if(passState.newPassword.length < 8) {
-       showAlert('Weak Password', 'The new password must structurally be at least 8 characters long.', 'warning');
+       toast.warning('New password must structurally be at least 8 characters long.');
        return;
     }
     try {
        await api.put('/users/password', { currentPassword: passState.currentPassword, newPassword: passState.newPassword });
-       showAlert('Security Updated', 'Your password cryptographic hashes have been completely redefined successfully.', 'success');
+       toast.success('Cryptographic hashes redefined successfully.');
        setPassState({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
        setIsChangingPass(false);
     } catch(err) {
-       showAlert('Authentication Failed', err.response?.data || 'Incorrect current credentials.', 'error');
+       toast.error(err.response?.data || 'Incorrect current credentials.');
     }
   };
 
@@ -326,7 +326,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-      <AlertModal {...customAlert} onClose={closeAlert} />
     </div>
   );
 }

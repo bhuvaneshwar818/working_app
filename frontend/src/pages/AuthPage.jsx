@@ -4,21 +4,18 @@ import { Shield, Mail, Lock, User, Phone, Eye, EyeOff, CheckCircle, XCircle, Loa
 import api from '../api';
 import { GoogleLogin } from '@react-oauth/google';
 import ThemeToggle from '../components/ThemeToggle';
-import AlertModal from '../components/AlertModal';
+import { useToast } from '../context/ToastContext';
 import './AuthPage.css';
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isForgotUsername, setIsForgotUsername] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const [customAlert, setCustomAlert] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-  const showAlert = (title, message, type='info') => setCustomAlert({ isOpen: true, title, message, type });
-  const closeAlert = () => setCustomAlert({ ...customAlert, isOpen: false });
 
   // Auth Form State
   const [formData, setFormData] = useState({
@@ -47,7 +44,6 @@ export default function AuthPage() {
   const [fuDob, setFuDob] = useState('');
 
   const [googleToken, setGoogleToken] = useState('');
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (e.target.name === 'email') setEmailStatus('idle'); // Reset checking visual on type
@@ -77,10 +73,11 @@ export default function AuthPage() {
         const res = await api.post('/auth/login', { username: formData.username, password: formData.password });
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('username', res.data.username);
+        toast.success(`Access Granted. Welcome back, ${res.data.username}.`);
         navigate('/dashboard');
       } else if (!isLogin && signupStep === 3) {
         if (formData.password !== formData.confirmPassword) {
-            showAlert('Password Mismatch', 'Your passwords do not securely match!', 'error');
+            toast.error('Passcodes do not securely match!');
             return;
         }
         const res = await api.post('/auth/google-register', { 
@@ -90,6 +87,7 @@ export default function AuthPage() {
         });
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('username', res.data.username);
+        toast.success(`Google Registration Complete. Welcome, ${res.data.username}.`);
         navigate('/dashboard');
       } else {
         // Password validation
@@ -103,21 +101,21 @@ export default function AuthPage() {
           if (!/[!@#$%^&*(),.?":{}|<>]/.test(pass)) errors.push('a special character');
           
           if (errors.length > 0) {
-            showAlert('Weak Password', `Your password is missing: ${errors.join(', ')}`, 'warning');
+            toast.warning(`Weak Password: Missing ${errors.join(', ')}`);
             setIsLoading(false);
             return;
           }
         }
 
         if (formData.password !== formData.confirmPassword) {
-            showAlert('Password Mismatch', 'Your passwords do not securely match!', 'error');
+            toast.error('Passcodes do not securely match!');
             setIsLoading(false);
             return;
         }
         // Strict Email Format Validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-           showAlert('Invalid Format', 'Please enter a valid email address. Make sure the spelling is correct.', 'warning');
+           toast.warning('Invalid email format detected.');
            setIsLoading(false);
            return;
         }
@@ -125,11 +123,13 @@ export default function AuthPage() {
         const res = await api.post('/auth/register', formData);
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('username', res.data.username);
+        toast.success("Security account created successfully!");
         navigate('/dashboard');
       }
     } catch (err) {
       const errMsg = err.response?.data?.message || err.response?.data || 'Authentication failed';
       setError(typeof errMsg === 'string' ? errMsg : 'Authentication failed');
+      toast.error(typeof errMsg === 'string' ? errMsg : 'Access Denied');
       
       if (typeof errMsg === 'string') {
         const lowerMsg = errMsg.toLowerCase();
@@ -138,7 +138,7 @@ export default function AuthPage() {
           lowerMsg.includes('already registered') || 
           lowerMsg.includes('user not found')
         ) {
-           showAlert('System Notification', errMsg, 'error');
+           toast.error(errMsg);
         }
       }
     } finally {
@@ -149,19 +149,19 @@ export default function AuthPage() {
   const handleSendSignupOtp = async () => {
     if (isLoading) return;
     if (emailStatus !== 'valid') {
-       showAlert('Email Validation Pending', 'Your email must be visually verified with a Green Tick before requesting an OTP.', 'warning');
+       toast.warning('Email verification pending.');
        return;
     }
     if (!formData.email) {
-      showAlert('Missing Requirement', `Please enter your Email first to fetch an OTP.`, 'warning');
+      toast.warning(`Email ID required for OTP dispatch.`);
       return;
     }
     setIsLoading(true);
     try {
       const res = await api.post('/auth/send-signup-otp', { identifier: formData.email, type: 'email' });
-      showAlert('Verification Process', res.data + '. Please securely check your email inbox.', 'success');
+      toast.success('Verification code dispatched.');
     } catch (err) {
-      showAlert('Verification Error', err.response?.data || 'Failed to dispatch verification code.', 'error');
+      toast.error(err.response?.data || 'Failed to dispatch verification code.');
     } finally {
       setIsLoading(false);
     }
@@ -170,16 +170,16 @@ export default function AuthPage() {
   const handleVerifyOtpAndProceed = async () => {
      if (isLoading) return;
      if (!formData.otp || formData.otp.length < 6) {
-        showAlert('Verification Needed', 'Please enter the 6-Digit code sent to your email.', 'warning');
+        toast.warning('Enter the 6-Digit code.');
         return;
      }
      setIsLoading(true);
      try {
         await api.post('/auth/verify-signup-otp', { identifier: formData.email, otp: formData.otp });
         setSignupStep(2);
-        showAlert('Identity Verified', 'Email mathematical verification successful. Please complete Phase 2.', 'success');
+        toast.success('Identity Verified Successfully.');
      } catch (err) {
-        showAlert('Verification Failed', err.response?.data || 'Invalid OTP code.', 'error');
+        toast.error(err.response?.data || 'Invalid OTP code.');
      } finally {
         setIsLoading(false);
      }
@@ -200,7 +200,7 @@ export default function AuthPage() {
            navigate('/dashboard');
        }
      } catch (err) {
-       showAlert('OAuth Error', err.response?.data || 'Google verification failed securely at the server.', 'error');
+       toast.error(err.response?.data || 'Google verification failed securely.');
      } finally {
        setIsLoading(false);
      }
@@ -215,14 +215,14 @@ export default function AuthPage() {
         if (fpStep === 1) {
             await api.post('/auth/forgot-password', { email: fpEmail, usernameOrPhone: fpUsernameOrPhone });
             setFpStep(2);
-            showAlert('Verification Process', "Check your registered email (or terminal console) for the OTP!", 'info');
+            toast.info("Check your registered email (or terminal console) for the OTP!");
         } else {
             if (fpNewPassword !== fpConfirmPassword) {
-                showAlert('Password Mismatch', 'Your new passwords do not securely match!', 'error');
+                toast.error('Your new passwords do not securely match!');
                 return;
             }
             const res = await api.post('/auth/reset-password', { email: fpEmail, otp: fpOtp, newPassword: fpNewPassword });
-            showAlert('Password Update', res.data, 'info');
+            toast.success(res.data);
             setIsForgotPassword(false);
             setFpStep(1);
         }
@@ -240,7 +240,7 @@ export default function AuthPage() {
      setIsLoading(true);
      try {
          const res = await api.post('/auth/forgot-username', { email: fuEmail, phone: fuPhone, dob: fuDob });
-         showAlert('Recovery Dispatched', res.data, 'success');
+         toast.success("Recovery details dispatched.");
          setIsForgotUsername(false);
          setFuEmail('');
          setFuPhone('');
@@ -305,7 +305,7 @@ export default function AuthPage() {
                </button>
             </form>
           </div>
-          <AlertModal {...customAlert} onClose={closeAlert} />
+
         </div>
       );
   }
@@ -346,7 +346,7 @@ export default function AuthPage() {
                </button>
             </form>
           </div>
-          <AlertModal {...customAlert} onClose={closeAlert} />
+
         </div>
       );
   }
@@ -502,13 +502,12 @@ export default function AuthPage() {
            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
              <GoogleLogin 
                onSuccess={handleGoogleSuccess}
-               onError={() => showAlert('OAuth Error', 'Google Login Popup failed or was closed.', 'error')}
+               onError={() => toast.error('Google Login Popup failed or was closed.')}
                shape="pill"
              />
            </div>
         </div>
       </div>
-      <AlertModal {...customAlert} onClose={closeAlert} />
     </div>
   );
 }

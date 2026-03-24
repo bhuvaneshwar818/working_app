@@ -12,15 +12,29 @@ export default function CameraCropper({ onClose, onSend }) {
   
   const videoRef = useRef(null);
   const imgRef = useRef(null);
+  const streamRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     startCamera();
-    return () => stopCamera();
+    return () => {
+      isMountedRef.current = false;
+      stopCamera();
+    };
   }, []);
 
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      
+      // If the user closed the modal before this finished, stop it immediately!
+      if (!isMountedRef.current) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        return;
+      }
+
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -31,9 +45,17 @@ export default function CameraCropper({ onClose, onSend }) {
   };
 
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        track.enabled = false;
+      });
+      streamRef.current = null;
+    }
+    setStream(null);
   };
 
   const capturePhoto = () => {
@@ -51,6 +73,7 @@ export default function CameraCropper({ onClose, onSend }) {
   };
 
   const retakePhoto = () => {
+    stopCamera();
     setImageSrc(null);
     setCrop(undefined);
     setCompletedCrop(null);
@@ -119,12 +142,13 @@ export default function CameraCropper({ onClose, onSend }) {
                 onLoadedMetadata={() => videoRef.current.play()}
                 style={{width: '100%', height: '100%', minHeight: '400px', objectFit: 'cover', display: 'block'}} 
              />
-             <button onClick={capturePhoto} className="btn-primary" style={{
-                position: 'absolute', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
-                padding: '1rem 3rem', borderRadius: '50px', background: 'var(--accent-primary)',
-                border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
-             }}>Capture Frame</button>
+             <div style={{position: 'absolute', bottom: '1.5rem', left: 0, width: '100%', display: 'flex', justifyContent: 'center'}}>
+                <button onClick={capturePhoto} className="btn-primary" style={{
+                   padding: '1rem 3rem', borderRadius: '50px', background: 'var(--accent-primary)',
+                   border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold',
+                   boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                }}>Capture Frame</button>
+             </div>
           </div>
         ) : (
           <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>

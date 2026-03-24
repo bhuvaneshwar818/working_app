@@ -5,9 +5,12 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
+import ConfirmModal from '../components/ConfirmModal';
+import { useToast } from '../context/ToastContext';
 import './Dashboard.css';
 
 export default function Dashboard() {
+  const toast = useToast();
   const [pendingRequests, setPendingRequests] = useState([]);
   const [activeChats, setActiveChats] = useState([]);
   const [searchUsername, setSearchUsername] = useState('');
@@ -17,6 +20,7 @@ export default function Dashboard() {
   const [searchError, setSearchError] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [pendingDarkRooms, setPendingDarkRooms] = useState(0);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const fetchDashboardData = async () => {
@@ -72,11 +76,12 @@ export default function Dashboard() {
     try {
       if (!username) return;
       await api.post('/requests/send', { receiverUsername: username });
-      setSearchResult(`Chat request sent securely to ${username}!`);
+      toast.success(`Secure connection request sent to ${username}.`);
       setSearchUsername('');
       setSearchResultsArray([]);
       fetchDashboardData(); 
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Connection attempt failed');
       setSearchError(err.response?.data?.message || 'Failed to send request');
     }
   };
@@ -84,9 +89,11 @@ export default function Dashboard() {
   const handleAccept = async (id) => {
     try {
       await api.post(`/requests/${id}/accept`);
+      toast.success("Secure link established.");
       fetchDashboardData();
       navigate(`/chat/${id}`); 
     } catch (err) {
+      toast.error("Handshake verification failed.");
       console.error(err);
     }
   };
@@ -94,18 +101,23 @@ export default function Dashboard() {
   const handleReject = async (id) => {
     try {
       await api.post(`/requests/${id}/reject`);
+      toast.info("Connection request terminated.");
       fetchDashboardData();
     } catch (err) {
+      toast.error("Failed to disconnect.");
       console.error(err);
     }
   };
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to exit the vault?")) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      navigate('/');
-    }
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    toast.success("Vault exited securely. Session terminated.");
+    navigate('/');
   };
 
   const myUsername = localStorage.getItem('username');
@@ -303,6 +315,17 @@ export default function Dashboard() {
           </div>
         </section>
       </main>
+
+      <ConfirmModal 
+        isOpen={isLogoutModalOpen}
+        title="Exit Vault"
+        message="Are you sure you want to exit the vault? This will end your current session securely."
+        confirmText="Exit Details"
+        cancelText="Cancel"
+        onConfirm={confirmLogout}
+        onCancel={() => setIsLogoutModalOpen(false)}
+        danger={true}
+      />
     </div>
   );
 }

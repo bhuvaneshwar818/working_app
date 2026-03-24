@@ -6,12 +6,14 @@ import { Shield, Send, ArrowLeft, Lock, Mic, Square, Paperclip, Trash2, Camera, 
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import CameraCropper from '../components/CameraCropper';
+import { useToast } from '../context/ToastContext';
 import './ChatPage.css';
 
 export default function ChatPage() {
   const { chatRequestId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
   const peerName = location.state?.peerName || 'Secure Comm Link';
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
@@ -210,7 +212,7 @@ export default function ChatPage() {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-          alert("Image is too large. Limit is 5MB.");
+          toast.error("Image is too large. Limit is 5MB.");
           return;
       }
       const reader = new FileReader();
