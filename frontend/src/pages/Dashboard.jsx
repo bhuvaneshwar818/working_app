@@ -50,9 +50,29 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 10000); // refresh every 10s for online status and pending requests
+    const interval = setInterval(fetchDashboardData, 10000); // refresh every 10s as fallback
     
-    return () => clearInterval(interval);
+    const token = localStorage.getItem('token');
+    let client = null;
+    if (token) {
+       const socket = new SockJS('http://localhost:8080/ws');
+       client = new Client({
+         webSocketFactory: () => socket,
+         connectHeaders: { Authorization: `Bearer ${token}` },
+         debug: () => {},
+         onConnect: () => {
+            client.subscribe('/user/queue/updates', () => {
+               fetchDashboardData();
+            });
+         }
+       });
+       client.activate();
+    }
+    
+    return () => {
+       clearInterval(interval);
+       if (client) client.deactivate();
+    };
   }, []);
 
   useEffect(() => {

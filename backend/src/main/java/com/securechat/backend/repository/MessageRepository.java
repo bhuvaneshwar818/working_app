@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
     List<Message> findByChatRequestOrderByCreatedAtAsc(ChatRequest chatRequest);
+    List<Message> findByChatRequestReceiverUsernameAndStatus(String receiverUsername, com.securechat.backend.enums.MessageStatus status);
     long countByChatRequestIdAndSenderUsernameNotAndStatusNot(UUID chatRequestId, String username, com.securechat.backend.enums.MessageStatus status);
 }

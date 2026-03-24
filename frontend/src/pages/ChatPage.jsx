@@ -85,10 +85,22 @@ export default function ChatPage() {
           if (msg.body) {
             const body = JSON.parse(msg.body);
             setMessages((prev) => {
-              // Ensure we don't accidentally duplicate
-              if (prev.find(m => m.id === body.id)) return prev;
+              const existingIdx = prev.findIndex(m => m.id === body.id);
+              if (existingIdx !== -1) {
+                  const newMessages = [...prev];
+                  newMessages[existingIdx] = body;
+                  return newMessages;
+              }
               return [...prev, body];
             });
+            
+            // Send read receipt if it's from peer and not yet SEEN
+            if (body.senderUsername && body.senderUsername !== username && body.status !== 'SEEN') {
+               client.publish({
+                 destination: '/app/chat.markRead',
+                 body: JSON.stringify({ chatRequestId })
+               });
+            }
           }
         });
       },

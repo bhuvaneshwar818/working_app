@@ -4,7 +4,6 @@ import com.securechat.backend.dto.ChatMessageResponse;
 import com.securechat.backend.dto.DarkRoomMessageDto;
 import com.securechat.backend.dto.MessageDto;
 import com.securechat.backend.service.DarkRoomService;
-import com.securechat.backend.service.DarkRoomService;
 import com.securechat.backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -28,6 +27,12 @@ public class ChatController {
         String senderUsername = authentication.getName();
         ChatMessageResponse response = messageService.saveMessage(senderUsername, messageDto);
         messagingTemplate.convertAndSend("/topic/chat/" + messageDto.getChatRequestId(), response);
+    }
+
+    @MessageMapping("/chat.markRead")
+    public void markRead(@Payload com.securechat.backend.dto.MarkReadDto dto, Authentication authentication) {
+        String username = authentication.getName();
+        messageService.markAllAsRead(dto.getChatRequestId(), username);
     }
 
     @MessageMapping("/darkroom.sendMessage")

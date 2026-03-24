@@ -2,6 +2,7 @@ package com.securechat.backend.config;
 
 import com.securechat.backend.service.DarkRoomService;
 import com.securechat.backend.service.OnlineStatusService;
+import com.securechat.backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -17,6 +18,7 @@ public class WebSocketEventListener {
     private final DarkRoomService darkRoomService;
     private final SimpMessagingTemplate messagingTemplate;
     private final OnlineStatusService onlineStatusService;
+    private final MessageService messageService;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -30,6 +32,7 @@ public class WebSocketEventListener {
         
         if (username != null) {
              onlineStatusService.userConnected(username);
+             messageService.markAllAsDelivered(username);
         }
     }
 
