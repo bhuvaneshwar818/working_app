@@ -71,9 +71,8 @@ export default function ChatPage() {
       return;
     }
 
-    const socket = new SockJS('http://localhost:8080/ws');
     const client = new Client({
-      webSocketFactory: () => socket,
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },

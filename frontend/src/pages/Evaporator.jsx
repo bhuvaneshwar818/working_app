@@ -56,9 +56,8 @@ export default function Evaporator() {
     setRoomHash(hash);
     setView('chat');
     
-    const socket = new SockJS('http://localhost:8080/ws');
     const client = new Client({
-      webSocketFactory: () => socket,
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       connectHeaders: { Authorization: `Bearer ${token}` },
       debug: () => {},
       onConnect: () => {

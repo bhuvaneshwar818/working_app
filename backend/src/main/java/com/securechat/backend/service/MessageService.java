@@ -60,6 +60,7 @@ public class MessageService {
                 .build();
 
         Message savedMessage = messageRepository.save(message);
+        System.out.println("DEBUG: Saved message " + savedMessage.getId() + " for DTO chatRequestId: " + messageDto.getChatRequestId() + " and Entity ID: " + chatRequest.getId());
         ChatMessageResponse response = mapToResponse(savedMessage);
 
         // Notify receiver's dashboard of the new message
@@ -146,7 +147,10 @@ public class MessageService {
             throw new RuntimeException("Unauthorized source");
         }
 
-        java.util.List<Message> messages = messageRepository.findByChatRequestOrderByCreatedAtAsc(chatRequest);
+        System.out.println("DEBUG: Fetching messages for UUID: " + chatRequestId);
+        java.util.List<Message> messages = messageRepository.findByChatRequestIdOrderByCreatedAtAsc(chatRequestId);
+        System.out.println("DEBUG: Found " + messages.size() + " messages for chatRequestId: " + chatRequestId);
+
         
         boolean updated = false;
         for (Message m : messages) {

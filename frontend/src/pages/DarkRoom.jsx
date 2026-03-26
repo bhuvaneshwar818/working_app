@@ -72,9 +72,8 @@ export default function DarkRoom() {
   useEffect(() => {
     if (!token) return;
 
-    const socket = new SockJS('http://localhost:8080/ws');
     const client = new Client({
-      webSocketFactory: () => socket,
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
         setIsConnected(true);

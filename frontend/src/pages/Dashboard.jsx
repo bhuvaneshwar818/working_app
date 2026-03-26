@@ -55,9 +55,8 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     let client = null;
     if (token) {
-       const socket = new SockJS('http://localhost:8080/ws');
        client = new Client({
-         webSocketFactory: () => socket,
+         webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
          connectHeaders: { Authorization: `Bearer ${token}` },
          debug: () => {},
          onConnect: () => {

@@ -19,6 +19,7 @@ public class MessageController {
 
     @GetMapping("/{chatRequestId}")
     public ResponseEntity<List<ChatMessageResponse>> getMessages(Authentication authentication, @PathVariable UUID chatRequestId) {
+        System.out.println("DEBUG: GET /api/messages/" + chatRequestId + " from user: " + authentication.getName());
         return ResponseEntity.ok(messageService.getMessages(chatRequestId, authentication.getName()));
     }
 }
