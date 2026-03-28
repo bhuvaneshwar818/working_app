@@ -117,6 +117,22 @@ public class DarkRoomService {
         activeKeys.remove(roomId);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public void reportTrustIssue(UUID roomId, String reporterUsername) {
+        DarkRoomRoom room = darkRoomRoomRepository.findById(roomId).orElseThrow();
+        if (!room.getInitiator().getUsername().equals(reporterUsername) && !room.getReceiver().getUsername().equals(reporterUsername)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        User peer = room.getInitiator().getUsername().equals(reporterUsername) ? room.getReceiver() : room.getInitiator();
+        
+        peer.setTrustBreakCount(peer.getTrustBreakCount() + 1);
+        userRepository.save(peer);
+        
+        darkRoomRoomRepository.deleteById(roomId);
+        
+        forceCollapseRoom(roomId);
+    }
+
     public List<DarkRoomRoomDto> getUserRooms(String username) {
         User u = userRepository.findByUsername(username).orElseThrow();
         return darkRoomRoomRepository.findAllByUser(u).stream().map(this::mapToDto).collect(Collectors.toList());

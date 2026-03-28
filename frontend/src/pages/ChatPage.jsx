@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Shield, Send, ArrowLeft, Lock, Mic, Square, Paperclip, Trash2, Camera, Check, CheckCheck, MoreVertical, Pin, CornerUpLeft, Smile } from 'lucide-react';
+import { Shield, Send, ArrowLeft, Lock, Mic, Square, Paperclip, Trash2, Camera, Check, CheckCheck, MoreVertical, Pin, CornerUpLeft, Smile, Flame } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import CameraCropper from '../components/CameraCropper';
@@ -72,7 +72,7 @@ export default function ChatPage() {
     }
 
     const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(`http://${window.location.hostname}:8080/ws`),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },
@@ -112,9 +112,14 @@ export default function ChatPage() {
     setStompClient(client);
 
     return () => {
-      client.deactivate();
+      // Ephemeral wipe: When leaving the chat, tell the server to clear any seen messages that should evaporate
+      if (token && chatRequestId) {
+        api.post(`/messages/${chatRequestId}/wipe-seen`).catch(() => {});
+      }
     };
-  }, [chatRequestId, token, navigate]);
+  }, [chatRequestId, token]);
+
+  const [isEvaporateMode, setIsEvaporateMode] = useState(false);
 
   const sendMessage = (e) => {
     e.preventDefault();
@@ -129,7 +134,7 @@ export default function ChatPage() {
         chatRequestId: chatRequestId,
         content: messageInput,
         type: 'TEXT',
-        evaporateTime: null 
+        evaporateTime: isEvaporateMode ? 5 : null 
       };
 
       stompClient.publish({
@@ -240,7 +245,7 @@ export default function ChatPage() {
         chatRequestId: chatRequestId,
         content: base64,
         type: type,
-        evaporateTime: null
+        evaporateTime: isEvaporateMode ? 5 : null
       };
       stompClient.publish({
         destination: '/app/chat.sendMessage',
@@ -328,6 +333,9 @@ export default function ChatPage() {
       <form className="chat-input-area glass-panel" onSubmit={sendMessage} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative'}}>
         {!isRecording && !audioBlobPreview && (
             <div style={{display: 'flex', gap: '0.25rem'}}>
+                <button type="button" onClick={() => setIsEvaporateMode(!isEvaporateMode)} className="btn-icon" style={{padding: '10px', background: isEvaporateMode ? 'var(--danger)' : 'transparent', color: isEvaporateMode ? 'white' : 'inherit', borderRadius: '8px'}} title={isEvaporateMode ? "Evaporation Mode ACTIVE" : "Enable Evaporation"}>
+                   <Flame size={18} />
+                </button>
                 <button type="button" onClick={() => setShowCameraMode(true)} className="btn-icon" style={{padding: '10px'}} title="Camera Capture" disabled={!isConnected}>
                    <Camera size={18} />
                 </button>

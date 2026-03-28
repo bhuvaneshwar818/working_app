@@ -20,7 +20,8 @@ public class DarkRoomMessage {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dark_room_id", nullable = false)
+    @JoinColumn(name = "dark_room_id", nullable = true)
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private DarkRoomRoom darkRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)

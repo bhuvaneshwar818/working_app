@@ -61,6 +61,16 @@ public class ChatRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<ChatRequestDto> getSentRequests(String senderUsername) {
+        User sender = userRepository.findByUsername(senderUsername)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return chatRequestRepository.findBySenderAndStatus(sender, RequestStatus.PENDING)
+                .stream()
+                .map(r -> mapToDto(r, senderUsername))
+                .collect(Collectors.toList());
+    }
+
     public List<ChatRequestDto> getActiveChats(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -83,6 +93,15 @@ public class ChatRequestService {
         }
 
         request.setStatus(RequestStatus.ACCEPTED);
+        
+        // Trust update: Both users get a success point
+        User sender = request.getSender();
+        User receiver = request.getReceiver();
+        sender.setSuccessfulConnectionsCount(sender.getSuccessfulConnectionsCount() + 1);
+        receiver.setSuccessfulConnectionsCount(receiver.getSuccessfulConnectionsCount() + 1);
+        userRepository.save(sender);
+        userRepository.save(receiver);
+
         ChatRequest updatedRequest = chatRequestRepository.save(request);
 
         return mapToDto(updatedRequest, receiverUsername);
@@ -102,18 +121,51 @@ public class ChatRequestService {
         return mapToDto(updatedRequest, receiverUsername);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public void reportTrustIssue(UUID requestId, String reporterUsername) {
+        ChatRequest request = chatRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Chat connection not found"));
+
+        if (!request.getSender().getUsername().equals(reporterUsername) && !request.getReceiver().getUsername().equals(reporterUsername)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        User peer = request.getSender().getUsername().equals(reporterUsername) ? request.getReceiver() : request.getSender();
+        
+        peer.setTrustBreakCount(peer.getTrustBreakCount() + 1);
+        userRepository.save(peer);
+
+        messageRepository.deleteByChatRequestId(requestId);
+        chatRequestRepository.delete(request);
+    }
+
     private ChatRequestDto mapToDto(ChatRequest request, String currentUsername) {
         long unreads = 0;
+        User currentUser = null;
         if (currentUsername != null) {
-            unreads = messageRepository.countByChatRequestIdAndSenderUsernameNotAndStatusNot(
-                request.getId(), currentUsername, com.securechat.backend.enums.MessageStatus.SEEN
+            currentUser = userRepository.findByUsername(currentUsername).orElse(null);
+        }
+
+        if (currentUser != null) {
+            unreads = messageRepository.countUnread(
+                request.getId(), currentUser.getUsername(), com.securechat.backend.enums.MessageStatus.SEEN
             );
         }
 
+        User sender = userRepository.findByUsername(request.getSender().getUsername()).orElse(request.getSender());
+        User receiver = userRepository.findByUsername(request.getReceiver().getUsername()).orElse(request.getReceiver());
+
+        String peerPicture = currentUsername != null && currentUsername.equalsIgnoreCase(sender.getUsername()) 
+                ? receiver.getProfilePicture() 
+                : sender.getProfilePicture();
+
         return ChatRequestDto.builder()
                 .id(request.getId())
-                .senderUsername(request.getSender().getUsername())
-                .receiverUsername(request.getReceiver().getUsername())
+                .senderUsername(sender.getUsername())
+                .senderProfilePicture(sender.getProfilePicture())
+                .receiverUsername(receiver.getUsername())
+                .receiverProfilePicture(receiver.getProfilePicture())
+                .peerProfilePicture(peerPicture)
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())
                 .unreadCount(unreads)

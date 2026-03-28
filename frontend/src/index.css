@@ -1,25 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg-primary: #0B0F19;
-  --bg-secondary: #151A27;
-  --bg-tertiary: #1E2538;
-  --text-primary: #ffffff;
-  --text-secondary: #8f9098;
-  --accent-primary: #1BC15A;
-  --accent-secondary: #3B82F6;
-  --accent-hover: #15A34A;
-  --danger: #ef4444;
-  --success: #1BC15A;
-  --border: rgba(255, 255, 255, 0.08);
-  --glass-bg: #151A27;
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --shadow-glow: 0 0 20px rgba(27, 193, 90, 0.15);
+  --bg-primary: #05070A;
+  --bg-secondary: #0A0D16;
+  --bg-tertiary: #121727;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9BA4B5;
+  --accent-primary: #00D179;
+  --accent-secondary: #2D68FF;
+  --accent-hover: #00B368;
+  --danger: #FF3D3D;
+  --success: #00D179;
+  --border: rgba(255, 255, 255, 0.12);
+  --glass-bg: rgba(10, 13, 22, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --shadow-glow: 0 0 30px rgba(0, 209, 121, 0.2);
   
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
   background-color: var(--bg-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  font-weight: 500;
 }
 
 [data-theme='light'] {
@@ -201,4 +202,10 @@ audio {
   display: flex;
   flex-direction: column;
 }
-
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}

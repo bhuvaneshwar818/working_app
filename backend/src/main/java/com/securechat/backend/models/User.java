@@ -37,7 +37,7 @@ public class User {
     private String profilePicture;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean isProfilePhotoPublic = true;
+    private boolean profilePhotoPublic = true;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean allowIncomingRequests = true;

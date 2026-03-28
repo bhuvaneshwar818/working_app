@@ -31,6 +31,12 @@ public class ChatRequestController {
         return ResponseEntity.ok(chatRequestService.getPendingRequests(receiverUsername));
     }
 
+    @GetMapping("/sent")
+    public ResponseEntity<List<ChatRequestDto>> getSentRequests(Authentication authentication) {
+        String senderUsername = authentication.getName();
+        return ResponseEntity.ok(chatRequestService.getSentRequests(senderUsername));
+    }
+
     @GetMapping("/active")
     public ResponseEntity<List<ChatRequestDto>> getActiveChats(Authentication authentication) {
         return ResponseEntity.ok(chatRequestService.getActiveChats(authentication.getName()));
@@ -46,5 +52,11 @@ public class ChatRequestController {
     public ResponseEntity<ChatRequestDto> rejectRequest(Authentication authentication, @PathVariable UUID requestId) {
         String receiverUsername = authentication.getName();
         return ResponseEntity.ok(chatRequestService.rejectRequest(requestId, receiverUsername));
+    }
+
+    @DeleteMapping("/{requestId}/trust-issue")
+    public ResponseEntity<?> reportTrustIssue(Authentication authentication, @PathVariable UUID requestId) {
+        chatRequestService.reportTrustIssue(requestId, authentication.getName());
+        return ResponseEntity.ok().build();
     }
 }

@@ -67,6 +67,13 @@ public class DarkRoomController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{roomId}/trust-issue")
+    public ResponseEntity<?> reportTrustIssue(Authentication auth, @PathVariable UUID roomId) {
+        darkRoomService.reportTrustIssue(roomId, auth.getName());
+        messagingTemplate.convertAndSend("/topic/darkroom-status/" + roomId, "COLLAPSED");
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/messages/{roomId}")
     public ResponseEntity<List<?>> getMessages(Authentication auth, @PathVariable UUID roomId) {
         if (!darkRoomService.areBothKeysInserted(roomId)) {

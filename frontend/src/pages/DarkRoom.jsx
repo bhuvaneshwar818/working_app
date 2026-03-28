@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Shield, Send, ArrowLeft, Key, Lock, RadioTower, Mic, Square, Paperclip, Trash2, Camera } from 'lucide-react';
+import { Shield, Send, ArrowLeft, Key, Lock, RadioTower, Mic, Square, Paperclip, Trash2, Camera, ShieldAlert } from 'lucide-react';
 import api from '../api';
 import './DarkRoom.css';
 import './ChatPage.css';
 import ThemeToggle from '../components/ThemeToggle';
 import CameraCropper from '../components/CameraCropper';
+import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
 
 export default function DarkRoom() {
@@ -17,7 +18,7 @@ export default function DarkRoom() {
   
   const [rooms, setRooms] = useState([]);
   const [targetUser, setTargetUser] = useState('');
-  
+  const [searchResultsArray, setSearchResultsArray] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [tempPin, setTempPin] = useState('');
@@ -43,6 +44,8 @@ export default function DarkRoom() {
   // Ref to hold connected stompClient persistently across renders
   const stompClientRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isTrustModalOpen, setIsTrustModalOpen] = useState(false);
+  const [trustRoomId, setTrustRoomId] = useState(null);
   
   // Tracking current active room subscriptions to prevent double-subbing
   const subscriptionsRef = useRef({});
@@ -65,6 +68,9 @@ export default function DarkRoom() {
       
       const onlineRes = await api.get('/users/online');
       setOnlineUsers(onlineRes.data);
+
+      const activeRes = await api.get('/requests/active');
+      setDashboardConnections(activeRes.data);
     } catch (err) {}
   };
 
@@ -73,7 +79,7 @@ export default function DarkRoom() {
     if (!token) return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(`http://${window.location.hostname}:8080/ws`),
       connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
         setIsConnected(true);
@@ -151,7 +157,6 @@ export default function DarkRoom() {
     if (view === 'dashboard') loadRooms();
   }, [view]);
 
-  // Fetch messages instantly for BOTH users when the room is breached
   useEffect(() => {
     if (view === 'chat' && selectedRoom) {
       api.get(`/darkroom/messages/${selectedRoom.id}`)
@@ -159,6 +164,16 @@ export default function DarkRoom() {
          .catch(() => setMessages([]));
     }
   }, [view, selectedRoom]);
+
+  useEffect(() => {
+    if (targetUser.trim().length > 0) {
+      api.get(`/users/search?q=${targetUser}`)
+         .then(res => setSearchResultsArray(res.data))
+         .catch(() => setSearchResultsArray([]));
+    } else {
+      setSearchResultsArray([]);
+    }
+  }, [targetUser]);
 
   const sendRequest = async (e) => {
     e.preventDefault();
@@ -221,6 +236,68 @@ export default function DarkRoom() {
       setMessages([]);
       setView('dashboard');
   };
+
+  const handleTrustIssue = async () => {
+    if (!trustRoomId) return;
+    try {
+       await api.post(`/darkroom/${trustRoomId}/trust-issue`);
+       toast.success("Trust Issue Reported. Vault Collapsed.");
+       setIsTrustModalOpen(false);
+       setTrustRoomId(null);
+       loadRooms();
+    } catch (err) {
+       toast.error(err.response?.data?.message || "Failed to report trust issue");
+    }
+  };
+
+  const openTrustModal = (roomId) => {
+    setTrustRoomId(roomId);
+    setIsTrustModalOpen(true);
+  };
+
+  const renderUserRow = (user, uName, isLocked) => (
+    <div key={uName} 
+      style={{
+          padding: '0.75rem 1rem', 
+          borderBottom: '1px solid rgba(255,255,255,0.05)', 
+          display:'flex', alignItems:'center', justifyContent: 'space-between',
+          color: isLocked ? 'var(--text-secondary)' : 'var(--text-primary)',
+          opacity: isLocked ? 0.7 : 1,
+          background: 'rgba(0, 0, 0, 0.3)'
+      }}
+    >
+       <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+           {user.profilePicture ? (
+               <img src={user.profilePicture} alt="Avatar" style={{width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover'}} />
+           ) : (
+               <Shield size={16} color={isLocked ? 'var(--text-secondary)' : 'var(--accent-primary)'}/> 
+           )}
+           <div style={{display: 'flex', flexDirection: 'column'}}>
+             <span style={{fontWeight: '500'}}>{uName}</span>
+           </div>
+       </div>
+       {isLocked ? (
+          <span style={{color: 'var(--danger)', fontSize: '0.8rem'}}>Requests Disabled</span>
+       ) : (
+          <button 
+            className="btn-cyber" 
+            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+            onClick={async (e) => { 
+              e.preventDefault(); 
+              e.stopPropagation(); 
+              try {
+                await api.post('/darkroom/request', { receiverUsername: uName });
+                setTargetUser(''); 
+                setSearchResultsArray([]); 
+                loadRooms();
+              } catch (err) { setError(err.response?.data?.message); }
+            }}
+          >
+            <Lock size={14} style={{marginRight: '0.3rem'}}/> Send Classified Ping
+          </button>
+       )}
+    </div>
+  );
 
   const transmitMessage = (e) => {
     e.preventDefault();
@@ -355,18 +432,28 @@ export default function DarkRoom() {
 
       {view === 'dashboard' && (
         <div className="darkroom-dashboard">
-           <div className="glass-panel" style={{padding: '2rem', marginBottom: '1.5rem', borderRadius: '12px'}}>
+           <div className="glass-panel" style={{padding: '2rem', marginBottom: '1.5rem', borderRadius: '12px', position: 'relative', zIndex: 20}}>
              <h3 style={{color: 'var(--accent-primary)', marginBottom: '1rem'}}>Initiate New Secure Connection</h3>
-             <form onSubmit={sendRequest} style={{display:'flex', gap: '1rem'}}>
-               <input 
-                  type="text" 
-                  placeholder="Ensure Target User is online" 
-                  value={targetUser} 
-                  onChange={e=>setTargetUser(e.target.value)} 
-                  required 
-                  style={{flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white'}}
-               />
-               <button className="btn-cyber"><Lock size={16} /> Send Classified Ping</button>
+             <form onSubmit={sendRequest} style={{position: 'relative'}}>
+               <div style={{display:'flex', gap: '1rem'}}>
+                 <input 
+                    type="text" 
+                    placeholder="Search username in database..." 
+                    value={targetUser} 
+                    onChange={e=>setTargetUser(e.target.value)} 
+                    required 
+                    style={{flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white'}}
+                 />
+               </div>
+               {targetUser.trim().length > 0 && searchResultsArray.length > 0 && (
+                 <div className="glass-panel" style={{position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, marginTop: '0.5rem', maxHeight: '300px', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid rgba(139, 92, 246, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'}}>
+                    {searchResultsArray.map(user => {
+                        const uName = typeof user.username === 'string' ? user.username : user;
+                        const isLocked = !user.allowIncomingRequests;
+                        return renderUserRow(user, uName, isLocked);
+                    })}
+                 </div>
+               )}
              </form>
            </div>
            
@@ -412,9 +499,32 @@ export default function DarkRoom() {
                         )}
 
                         {room.status === 'READY' && (
-                           <button className="btn-cyber" style={{marginTop: 'auto'}} onClick={() => openModal('unlock', room)}>
-                               <RadioTower size={18} /> Initiate Synchronized Breach
-                           </button>
+                           <div style={{display: 'flex', gap: '0.5rem', marginTop: 'auto'}}>
+                               <button className="btn-cyber" style={{flex: 1}} onClick={() => openModal('unlock', room)}>
+                                   <RadioTower size={18} /> Initiate Synchronized Breach
+                               </button>
+                               <button 
+                                 className="btn-secondary" 
+                                 style={{
+                                   padding: '0.5rem 1.25rem', 
+                                   background: 'rgba(239, 68, 68, 0.1)', 
+                                   color: '#f87171', 
+                                   border: '1px solid rgba(239, 68, 68, 0.3)', 
+                                   fontSize: '0.85rem', 
+                                   fontWeight: '600', 
+                                   borderRadius: '8px',
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: '0.5rem',
+                                   transition: 'all 0.2s ease'
+                                 }} 
+                                 onClick={() => openTrustModal(room.id)}
+                                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                               >
+                                   <ShieldAlert size={16} /> Trust Issue
+                               </button>
+                           </div>
                         )}
                      </div>
                    )
@@ -581,6 +691,19 @@ export default function DarkRoom() {
             }} 
          />
       )}
+      
+      <ConfirmModal 
+        isOpen={isTrustModalOpen}
+        title="Report Trust Issue?"
+        message="Are you sure you want to report a Trust Issue? This will immediately collapse the vault and negatively impact your peer's trust rating permanently."
+        confirmText="Report Issue"
+        danger={true}
+        onConfirm={handleTrustIssue}
+        onCancel={() => {
+          setIsTrustModalOpen(false);
+          setTrustRoomId(null);
+        }}
+      />
     </div>
   );
 }

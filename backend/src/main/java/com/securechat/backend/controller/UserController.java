@@ -19,41 +19,39 @@ public class UserController {
     private final com.securechat.backend.service.OnlineStatusService onlineService;
 
     @GetMapping("/search")
-    public ResponseEntity<List<Map<String, String>>> searchUsers(@RequestParam String q, java.security.Principal principal) {
+    public ResponseEntity<List<com.securechat.backend.dto.UserPublicProfileDto>> searchUsers(@RequestParam String q, java.security.Principal principal) {
         if (q == null || q.isBlank()) {
             return ResponseEntity.ok(List.of());
         }
         
         String myName = principal != null ? principal.getName() : "";
         
-        List<Map<String, String>> matches = userRepository.findAll().stream()
+        List<com.securechat.backend.dto.UserPublicProfileDto> matches = userRepository.findAll().stream()
                 .filter(u -> u.getUsername().toLowerCase().contains(q.toLowerCase()) && !u.getUsername().equals(myName))
                 .limit(10)
-                .map(u -> {
-                    Map<String, String> m = new java.util.HashMap<>();
-                    m.put("username", u.getUsername());
-                    if (u.isProfilePhotoPublic() && u.getProfilePicture() != null) {
-                        m.put("profilePicture", u.getProfilePicture());
-                    }
-                    m.put("allowIncomingRequests", String.valueOf(u.isAllowIncomingRequests()));
-                    m.put("trustBreakCount", String.valueOf(u.getTrustBreakCount()));
-                    m.put("successfulConnectionsCount", String.valueOf(u.getSuccessfulConnectionsCount()));
-                    return m;
-                })
+                .map(u -> com.securechat.backend.dto.UserPublicProfileDto.builder()
+                    .username(u.getUsername())
+                    .profilePicture(u.isProfilePhotoPublic() ? u.getProfilePicture() : null)
+                    .allowIncomingRequests(u.isAllowIncomingRequests())
+                    .trustBreakCount(u.getTrustBreakCount())
+                    .successfulConnectionsCount(u.getSuccessfulConnectionsCount())
+                    .build())
                 .collect(Collectors.toList());
-                
+                 
         return ResponseEntity.ok(matches);
     }
 
     @GetMapping("/{username}/public")
-    public ResponseEntity<?> getPublicProfile(@PathVariable String username) {
+    public ResponseEntity<com.securechat.backend.dto.UserPublicProfileDto> getPublicProfile(@PathVariable String username) {
         return userRepository.findByUsername(username).map(u -> {
-            Map<String, String> m = new java.util.HashMap<>();
-            m.put("username", u.getUsername());
-            if (u.isProfilePhotoPublic() && u.getProfilePicture() != null) {
-                m.put("profilePicture", u.getProfilePicture());
-            }
-            return ResponseEntity.ok(m);
+            com.securechat.backend.dto.UserPublicProfileDto dto = com.securechat.backend.dto.UserPublicProfileDto.builder()
+                .username(u.getUsername())
+                .profilePicture(u.isProfilePhotoPublic() ? u.getProfilePicture() : null)
+                .allowIncomingRequests(u.isAllowIncomingRequests())
+                .trustBreakCount(u.getTrustBreakCount())
+                .successfulConnectionsCount(u.getSuccessfulConnectionsCount())
+                .build();
+            return ResponseEntity.ok(dto);
         }).orElse(ResponseEntity.notFound().build());
     }
 

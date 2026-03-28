@@ -22,4 +22,10 @@ public class MessageController {
         System.out.println("DEBUG: GET /api/messages/" + chatRequestId + " from user: " + authentication.getName());
         return ResponseEntity.ok(messageService.getMessages(chatRequestId, authentication.getName()));
     }
+
+    @PostMapping("/{chatRequestId}/wipe-seen")
+    public ResponseEntity<?> wipeSeen(Authentication auth, @PathVariable UUID chatRequestId) {
+        messageService.wipeSeenMessages(chatRequestId);
+        return ResponseEntity.ok().build();
+    }
 }

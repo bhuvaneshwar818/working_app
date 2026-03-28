@@ -87,17 +87,32 @@ public class MessageService {
         java.util.List<Message> messages = messageRepository.findByChatRequestOrderByCreatedAtAsc(chatRequest);
         
         boolean updated = false;
+        java.util.List<Message> toDelete = new java.util.ArrayList<>();
+        java.util.List<Message> toUpdate = new java.util.ArrayList<>();
+        
         for (Message m : messages) {
              if (!m.getSender().getUsername().equals(readerUsername) && m.getStatus() != MessageStatus.SEEN) {
                   m.setStatus(MessageStatus.SEEN);
                   updated = true;
-                  // Broadcast the specific updated message to the chat room so sender gets blue ticks
+                  
+                  // Broadcast SEEN status first so UI knows it was delivered/seen
                   messagingTemplate.convertAndSend("/topic/chat/" + chatRequestId, mapToResponse(m));
+                  
+                  if (m.getEvaporateTime() != null) {
+                      toDelete.add(m);
+                      // Notify UI that this specific message is now evaporating
+                      ChatMessageResponse evaporationSignal = mapToResponse(m);
+                      evaporationSignal.setContent("__EVAPORATING__");
+                      messagingTemplate.convertAndSend("/topic/chat/" + chatRequestId, evaporationSignal);
+                  } else {
+                      toUpdate.add(m);
+                  }
              }
         }
         
         if (updated) {
-             messageRepository.saveAll(messages);
+             if (!toUpdate.isEmpty()) messageRepository.saveAll(toUpdate);
+             if (!toDelete.isEmpty()) messageRepository.deleteAll(toDelete);
              // Notify the receiver (the person who originally sent the messages) dashboard to update unread badge counts
              String senderUsername = chatRequest.getSender().getUsername().equals(readerUsername) 
                  ? chatRequest.getReceiver().getUsername() 
@@ -174,5 +189,12 @@ public class MessageService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    public void wipeSeenMessages(UUID chatRequestId) {
+        java.util.List<Message> seenEvaporating = messageRepository.findByChatRequestIdAndStatusAndEvaporateTimeIsNotNull(chatRequestId, MessageStatus.SEEN);
+        if (!seenEvaporating.isEmpty()) {
+            messageRepository.deleteAll(seenEvaporating);
+        }
     }
 }

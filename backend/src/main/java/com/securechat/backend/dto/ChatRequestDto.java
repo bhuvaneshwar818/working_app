@@ -13,6 +13,9 @@ public class ChatRequestDto {
     private UUID id;
     private String senderUsername;
     private String receiverUsername;
+    private String senderProfilePicture;
+    private String receiverProfilePicture;
+    private String peerProfilePicture;
     private RequestStatus status;
     private LocalDateTime createdAt;
     private Long unreadCount;

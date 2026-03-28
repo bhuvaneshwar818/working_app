@@ -16,5 +16,8 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     @Query("SELECT m FROM Message m WHERE m.chatRequest.id = :chatRequestId ORDER BY m.createdAt ASC")
     List<Message> findByChatRequestIdOrderByCreatedAtAsc(@Param("chatRequestId") UUID chatRequestId);
     List<Message> findByChatRequestReceiverUsernameAndStatus(String receiverUsername, com.securechat.backend.enums.MessageStatus status);
-    long countByChatRequestIdAndSenderUsernameNotAndStatusNot(UUID chatRequestId, String username, com.securechat.backend.enums.MessageStatus status);
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.chatRequest.id = :chatRequestId AND m.sender.username != :username AND m.status != :status")
+    long countUnread(@Param("chatRequestId") UUID chatRequestId, @Param("username") String username, @Param("status") com.securechat.backend.enums.MessageStatus status);
+    
+    java.util.List<Message> findByChatRequestIdAndStatusAndEvaporateTimeIsNotNull(UUID chatRequestId, com.securechat.backend.enums.MessageStatus status);
 }
