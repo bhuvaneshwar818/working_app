@@ -9,4 +9,5 @@ import java.util.UUID;
 
 public interface DarkRoomMessageRepository extends JpaRepository<DarkRoomMessage, UUID> {
     List<DarkRoomMessage> findByDarkRoomOrderByCreatedAtAsc(DarkRoomRoom darkRoom);
+    void deleteByDarkRoom(DarkRoomRoom darkRoom);
 }

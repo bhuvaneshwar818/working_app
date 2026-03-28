@@ -128,7 +128,11 @@ public class DarkRoomService {
         peer.setTrustBreakCount(peer.getTrustBreakCount() + 1);
         userRepository.save(peer);
         
+        // Manual wipe required due to DB foreign key constraints blocking direct room deletion
+        darkRoomMessageRepository.deleteByDarkRoom(room);
+        darkRoomMessageRepository.flush();
         darkRoomRoomRepository.deleteById(roomId);
+        darkRoomRoomRepository.flush();
         
         forceCollapseRoom(roomId);
     }
