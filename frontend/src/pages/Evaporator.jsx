@@ -26,7 +26,7 @@ export default function Evaporator() {
   const [audioTimer, setAudioTimer] = useState(0);
   const [audioBlobPreview, setAudioBlobPreview] = useState(null);
   const [showCameraMode, setShowCameraMode] = useState(false);
-  const [evaporateTime, setEvaporateTime] = useState(10);
+  const [evaporateTime, setEvaporateTime] = useState(() => Number(localStorage.getItem('evaporateTime')) || 30);
   const [audioBands, setAudioBands] = useState([8, 8, 8, 8, 8]);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -361,13 +361,7 @@ export default function Evaporator() {
             
         {!isRecording && !audioBlobPreview && (
             <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-                <select value={evaporateTime} onChange={(e) => setEvaporateTime(Number(e.target.value))} style={{background: 'rgba(255,0,0,0.1)', color: 'var(--danger)', border: '1px solid rgba(255, 62, 62, 0.3)', borderRadius: '6px', padding: '4px', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center'}} title="Evaporation Timer">
-                   <option value={5}>5s</option>
-                   <option value={10}>10s</option>
-                   <option value={30}>30s</option>
-                   <option value={60}>1m</option>
-                   <option value={300}>5m</option>
-                </select>
+                <span style={{background: 'rgba(255,0,0,0.1)', color: 'var(--danger)', border: '1px solid rgba(255, 62, 62, 0.3)', borderRadius: '6px', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold', whiteSpace: 'nowrap'}} title="Evaporation delay (change in Settings)">{evaporateTime}s</span>
                 <button type="button" onClick={() => setShowCameraMode(true)} style={{color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0}} title="Camera Capture" disabled={!stompClient}>
                    <Camera size={20} />
                 </button>
