@@ -20,4 +20,6 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     long countUnread(@Param("chatRequestId") UUID chatRequestId, @Param("username") String username, @Param("status") com.securechat.backend.enums.MessageStatus status);
     
     java.util.List<Message> findByChatRequestIdAndStatusAndEvaporateTimeIsNotNull(UUID chatRequestId, com.securechat.backend.enums.MessageStatus status);
+    
+    void deleteByChatRequestId(UUID chatRequestId);
 }

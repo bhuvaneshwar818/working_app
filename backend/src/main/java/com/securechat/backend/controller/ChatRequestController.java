@@ -59,4 +59,16 @@ public class ChatRequestController {
         chatRequestService.reportTrustIssue(requestId, authentication.getName());
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{requestId}")
+    public ResponseEntity<?> deleteConnection(Authentication authentication, @PathVariable UUID requestId) {
+        chatRequestService.deleteConnection(requestId, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{requestId}/pin")
+    public ResponseEntity<?> togglePin(Authentication authentication, @PathVariable UUID requestId) {
+        chatRequestService.togglePin(requestId, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
 }

@@ -139,6 +139,36 @@ public class ChatRequestService {
         chatRequestRepository.delete(request);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteConnection(UUID requestId, String username) {
+        ChatRequest request = chatRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Chat connection not found"));
+
+        if (!request.getSender().getUsername().equals(username) && !request.getReceiver().getUsername().equals(username)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        messageRepository.deleteByChatRequestId(requestId);
+        chatRequestRepository.delete(request);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void togglePin(UUID requestId, String username) {
+        ChatRequest request = chatRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+        if (request.getSender().getUsername().equals(username)) {
+            request.setSenderPinned(!request.isSenderPinned());
+        } else if (request.getReceiver().getUsername().equals(username)) {
+            request.setReceiverPinned(!request.isReceiverPinned());
+        } else {
+            throw new RuntimeException("Unauthorized");
+        }
+        chatRequestRepository.save(request);
+    }
+
+
+
+
     private ChatRequestDto mapToDto(ChatRequest request, String currentUsername) {
         long unreads = 0;
         User currentUser = null;
@@ -155,20 +185,25 @@ public class ChatRequestService {
         User sender = userRepository.findByUsername(request.getSender().getUsername()).orElse(request.getSender());
         User receiver = userRepository.findByUsername(request.getReceiver().getUsername()).orElse(request.getReceiver());
 
-        String peerPicture = currentUsername != null && currentUsername.equalsIgnoreCase(sender.getUsername()) 
-                ? receiver.getProfilePicture() 
-                : sender.getProfilePicture();
+        User peer = currentUsername != null && currentUsername.equalsIgnoreCase(sender.getUsername()) ? receiver : sender;
+        String peerPicture = peer.isProfilePhotoPublic() ? peer.getProfilePicture() : null;
+
+        boolean isPinned = false;
+        if (currentUsername != null) {
+            isPinned = currentUsername.equalsIgnoreCase(sender.getUsername()) ? request.isSenderPinned() : request.isReceiverPinned();
+        }
 
         return ChatRequestDto.builder()
                 .id(request.getId())
                 .senderUsername(sender.getUsername())
-                .senderProfilePicture(sender.getProfilePicture())
+                .senderProfilePicture(sender.isProfilePhotoPublic() ? sender.getProfilePicture() : null)
                 .receiverUsername(receiver.getUsername())
-                .receiverProfilePicture(receiver.getProfilePicture())
+                .receiverProfilePicture(receiver.isProfilePhotoPublic() ? receiver.getProfilePicture() : null)
                 .peerProfilePicture(peerPicture)
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())
                 .unreadCount(unreads)
+                .isPinned(isPinned)
                 .build();
     }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, ArrowLeft, Save, Edit3, Settings, Camera, Lock, EyeOff, Eye, Shield, Bell, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, ArrowLeft, Save, Edit3, Settings, Camera, Lock, EyeOff, Eye, Shield, Bell, Trash2, Sun, Moon } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useToast } from '../context/ToastContext';
@@ -154,6 +154,7 @@ export default function ProfilePage() {
   const tabs = [
     { id: 'profile', label: 'My Profile', icon: <User size={18}/> },
     { id: 'privacy', label: 'Privacy & Security', icon: <Shield size={18}/> },
+    { id: 'appearance', label: 'Appearance', icon: <Eye size={18}/> },
     { id: 'email', label: 'Email Control', icon: <Mail size={18}/> },
     { id: 'password', label: 'Password Lock', icon: <Lock size={18}/> }
   ];
@@ -299,6 +300,9 @@ export default function ProfilePage() {
              </div>
           )}
 
+
+
+          
           {activeTab === 'password' && (
              <div className="animate-fade-in" style={{maxWidth: '500px'}}>
                 <h3 style={{fontSize: '1.5rem', marginBottom: '1.5rem'}}>Security Gateway</h3>
@@ -326,6 +330,58 @@ export default function ProfilePage() {
                 </form>
              </div>
           )}
+          
+          {activeTab === 'appearance' && (
+             <div className="animate-fade-in">
+                <h3 style={{fontSize: '1.5rem', marginBottom: '1.5rem'}}>Theme & Identity</h3>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+                   <div style={{padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--border)'}}>
+                      <h4 style={{marginBottom: '1rem'}}>Active Theme</h4>
+                      <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem'}}>Select your preferred interface aesthetic.</p>
+                      
+                      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
+                         <button 
+                            onClick={() => {
+                               const newTheme = 'dark';
+                               localStorage.setItem('theme', newTheme);
+                               document.documentElement.setAttribute('data-theme', newTheme);
+                               window.dispatchEvent(new CustomEvent('theme-changed', { detail: newTheme }));
+                            }}
+                            style={{
+                               padding: '24px', borderRadius: '12px', border: '2px solid ' + (localStorage.getItem('theme') !== 'light' ? 'var(--accent-primary)' : 'var(--border)'),
+                               background: '#0a0d16', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px'
+                            }}
+                         >
+                            <Moon size={24} color={localStorage.getItem('theme') !== 'light' ? 'var(--accent-primary)' : 'var(--text-secondary)'} />
+                            <span style={{fontWeight: 'bold'}}>STEALTH (DARK)</span>
+                         </button>
+                         <button 
+                            onClick={() => {
+                               const newTheme = 'light';
+                               localStorage.setItem('theme', newTheme);
+                               document.documentElement.setAttribute('data-theme', newTheme);
+                               window.dispatchEvent(new CustomEvent('theme-changed', { detail: newTheme }));
+                            }}
+                            style={{
+                               padding: '24px', borderRadius: '12px', border: '2px solid ' + (localStorage.getItem('theme') === 'light' ? 'var(--accent-primary)' : 'var(--border)'),
+                               background: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px'
+                            }}
+                         >
+                            <Sun size={24} color={localStorage.getItem('theme') === 'light' ? 'var(--accent-primary)' : 'var(--text-secondary)'} />
+                            <span style={{fontWeight: 'bold'}}>VISIBLE (LIGHT)</span>
+                         </button>
+                      </div>
+                   </div>
+
+                   <div style={{padding: '2rem', background: 'rgba(0, 209, 121, 0.05)', borderRadius: '15px', border: '1px dashed var(--accent-primary)', textAlign: 'center'}}>
+                      <Shield size={32} color="var(--accent-primary)" style={{marginBottom: '1rem'}} />
+                      <h4>Identity Safeguard</h4>
+                      <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px'}}>Your visual preferences are stored locally to maintain zero-knowledge principles.</p>
+                   </div>
+                </div>
+             </div>
+          )}
+
           
         </div>
       </div>

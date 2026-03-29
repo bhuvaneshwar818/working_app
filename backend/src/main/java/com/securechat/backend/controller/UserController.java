@@ -67,13 +67,26 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(java.security.Principal principal) {
+    public ResponseEntity<com.securechat.backend.dto.UserProfileDto> getProfile(java.security.Principal principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // Avoid sending password back
-        user.setPassword(null);
-        return ResponseEntity.ok(user);
+        
+        return ResponseEntity.ok(com.securechat.backend.dto.UserProfileDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .gender(user.getGender())
+                .dob(user.getDob())
+                .email(user.getEmail())
+                .mobileNumber(user.getMobileNumber())
+                .profilePicture(user.getProfilePicture())
+                .profilePhotoPublic(user.isProfilePhotoPublic())
+                .allowIncomingRequests(user.isAllowIncomingRequests())
+                .trustBreakCount(user.getTrustBreakCount())
+                .successfulConnectionsCount(user.getSuccessfulConnectionsCount())
+                .build());
     }
 
     @PutMapping("/profile")

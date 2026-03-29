@@ -6,6 +6,7 @@
   --bg-tertiary: #121727;
   --text-primary: #FFFFFF;
   --text-secondary: #9BA4B5;
+  --text-muted: #64748b;
   --accent-primary: #00D179;
   --accent-secondary: #2D68FF;
   --accent-hover: #00B368;
@@ -15,6 +16,8 @@
   --glass-bg: rgba(10, 13, 22, 0.95);
   --glass-border: rgba(255, 255, 255, 0.15);
   --shadow-glow: 0 0 30px rgba(0, 209, 121, 0.2);
+  --sidebar-bg: linear-gradient(180deg, #0f131e 0%, #080a12 100%);
+  --sidebar-border: rgba(255, 255, 255, 0.05);
   
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
@@ -28,16 +31,19 @@
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f5f9;
   --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
   --accent-primary: #1BC15A;
   --accent-secondary: #3B82F6;
   --accent-hover: #15A34A;
   --danger: #dc2626;
   --success: #16A34A;
   --border: rgba(0, 0, 0, 0.1);
-  --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.12);
   --shadow-glow: 0 0 20px rgba(27, 193, 90, 0.15);
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
 }
 
 * {
@@ -77,6 +83,11 @@ button {
   background: none;
   color: inherit;
   transition: all 0.2s ease;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 input {

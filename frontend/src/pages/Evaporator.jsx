@@ -84,7 +84,7 @@ export default function Evaporator() {
     api.get(`/evaporator/messages/${peer}`).then(res => {
        setMessages(res.data);
        res.data.forEach(msg => {
-          if (msg.evaporateTime) {
+          if (msg.evaporateTime && msg.senderUsername === username) {
              setTimeout(() => removeMessageLocally(msg.id), msg.evaporateTime * 1000);
           }
        });
@@ -103,7 +103,7 @@ export default function Evaporator() {
           if (msg.body) {
             const body = JSON.parse(msg.body);
             setMessages((prev) => [...prev, body]);
-            if (body.evaporateTime) {
+            if (body.evaporateTime && body.senderUsername === username) {
                setTimeout(() => removeMessageLocally(body.id), body.evaporateTime * 1000);
             }
           }
@@ -357,30 +357,29 @@ export default function Evaporator() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form className="chat-input-area" onSubmit={sendMessage} style={{flexShrink: 0, border: '1px solid rgba(255, 62, 62, 0.2)', background:'var(--bg-color)', padding:'1rem', display:'flex', gap:'1rem', borderRadius: '12px', marginTop: '1rem', alignItems: 'center'}}>
+          <form className="chat-input-area" onSubmit={sendMessage} style={{flexShrink: 0, border: '1px solid rgba(255, 62, 62, 0.2)', background:'var(--bg-color)', padding:'0.75rem 1rem', display:'flex', gap:'0.75rem', borderRadius: '12px', marginTop: '1rem', alignItems: 'center'}}>
             
         {!isRecording && !audioBlobPreview && (
-            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-                <span style={{background: 'rgba(255,0,0,0.1)', color: 'var(--danger)', border: '1px solid rgba(255, 62, 62, 0.3)', borderRadius: '6px', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold', whiteSpace: 'nowrap'}} title="Evaporation delay (change in Settings)">{evaporateTime}s</span>
-                <button type="button" onClick={() => setShowCameraMode(true)} style={{color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0}} title="Camera Capture" disabled={!stompClient}>
+            <div style={{display: 'flex', gap: '0.6rem', alignItems: 'center', flexShrink: 0}}>
+                <span style={{background: 'rgba(255,0,0,0.1)', color: 'var(--danger)', border: '1px solid rgba(255, 62, 62, 0.3)', borderRadius: '6px', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold', whiteSpace: 'nowrap', lineHeight: '1', display: 'inline-flex', alignItems: 'center', height: '28px'}} title="Evaporation delay (change in Settings)">{evaporateTime}s</span>
+                <button type="button" onClick={() => setShowCameraMode(true)} style={{color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', height: '28px'}} title="Camera Capture" disabled={!stompClient}>
                    <Camera size={20} />
                 </button>
-                <label style={{cursor: 'pointer', color: 'var(--danger)'}} title="Upload Secure Image">
+                <label style={{cursor: 'pointer', color: 'var(--danger)', display: 'inline-flex', alignItems: 'center', height: '28px'}} title="Upload Secure Image">
                    <Paperclip size={20} />
                    <input type="file" accept="image/*" style={{display: 'none'}} onChange={handleImageUpload} disabled={!stompClient} />
                 </label>
+                <button type="button" onClick={startRecording} style={{color: 'var(--accent-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', height: '28px'}} title="Record Volatile Audio">
+                   <Mic size={20} />
+                </button>
             </div>
         )}
-            
-            {isRecording ? (
-               <button type="button" onClick={stopRecording} className="blinking-mic" style={{color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0}} title="Stop Recording">
+
+            {isRecording && (
+               <button type="button" onClick={stopRecording} className="blinking-mic" style={{color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', flexShrink: 0}} title="Stop Recording">
                   <Mic size={20} />
                </button>
-            ) : !audioBlobPreview ? (
-               <button type="button" onClick={startRecording} style={{color: 'var(--accent-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0}} title="Record Volatile Audio">
-                  <Mic size={20} />
-               </button>
-            ) : null}
+            )}
 
             {isRecording && (
            <div style={{display: 'flex', alignItems: 'center', gap: '10px', flex: 1}}>
@@ -396,7 +395,7 @@ export default function Evaporator() {
 
             {audioBlobPreview && (
                <div style={{display: 'flex', alignItems: 'center', gap: '10px', flex: 1}}>
-                  <button type="button" onClick={discardAudio} style={{color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0}} title="Discard Recording">
+                  <button type="button" onClick={discardAudio} style={{color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center'}} title="Discard Recording">
                      <Trash2 size={20} />
                   </button>
                   <audio src={audioBlobPreview} controls style={{height: '35px', flex: 1, outline: 'none'}} />
@@ -404,10 +403,10 @@ export default function Evaporator() {
             )}
 
             {!isRecording && !audioBlobPreview && (
-                <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="Transmit untraceable data..." style={{flex:1, background: 'transparent', border:'none', color:'var(--text-primary)', fontSize: '1rem'}} />
+                <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="Transmit untraceable data..." style={{flex: 1, background: 'transparent', border:'none', color:'var(--text-primary)', fontSize: '1rem', height: '28px', padding: 0}} />
             )}
             
-            <button type="submit" className="btn-cyber" style={{padding: '0.5rem 1rem', background: 'var(--accent-secondary)'}} disabled={(!messageInput.trim() && !audioBlobPreview) || isRecording}>
+            <button type="submit" className="btn-cyber" style={{padding: '0.5rem 1rem', background: 'var(--accent-secondary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}} disabled={(!messageInput.trim() && !audioBlobPreview) || isRecording}>
               <Send size={18} />
             </button>
           </form>

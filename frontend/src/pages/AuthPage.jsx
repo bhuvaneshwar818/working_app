@@ -408,11 +408,31 @@ export default function AuthPage() {
                 <Phone size={18} style={{position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)'}} />
                 <input type="tel" name="mobileNumber" placeholder="Mobile Number" onChange={handleChange} required style={{width: '100%', padding: '0.75rem', paddingLeft: '40px', borderRadius: '8px'}} />
               </div>
-              <div className="form-group" style={{position: 'relative', gridColumn: '1 / -1', display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+              <div className="form-group" style={{position: 'relative', gridColumn: '1 / -1', display: 'flex', flexDirection: 'row', gap: '0.5rem', alignItems: 'center'}}>
                 <Lock size={18} style={{position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)'}} />
                 <input type="text" name="otp" placeholder="6-Digit Verification Code" value={formData.otp} onChange={handleChange} style={{flex: 1, padding: '0.75rem', paddingLeft: '40px', borderRadius: '8px', letterSpacing: '2px', fontWeight: 'bold'}} maxLength={6} />
-                <button type="button" className="btn-secondary" onClick={() => handleSendSignupOtp()} disabled={isLoading} style={{padding: '0.75rem', cursor: isLoading ? 'wait' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                   {isLoading ? <Loader2 className="spin-animation" size={18} /> : 'Email OTP'}
+                <button type="button" onClick={() => handleSendSignupOtp()} disabled={isLoading} style={{
+                  padding: '0.75rem 1.25rem',
+                  background: 'var(--accent-primary)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: isLoading ? 'wait' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'
+                }}>
+                   {isLoading ? <Loader2 className="spin-animation" size={18} /> : (
+                     <>
+                       <Mail size={16} />
+                       Email OTP
+                     </>
+                   )}
                 </button>
               </div>
               
@@ -427,7 +447,7 @@ export default function AuthPage() {
               {!isLogin && <h4 style={{textAlign: 'center', marginBottom: '0.5rem', color: 'var(--accent-primary)'}}>Phase 2: Secure Credentials</h4>}
               <div className="form-group" style={{position: 'relative'}}>
                 <User size={18} style={{position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)'}} />
-                <input type="text" name="username" placeholder="Unique Username" onChange={handleChange} required style={{width: '100%', padding: '0.75rem', paddingLeft: '40px', borderRadius: '8px'}} />
+                <input type="text" name="username" placeholder="Username" onChange={handleChange} required style={{width: '100%', padding: '0.75rem', paddingLeft: '40px', borderRadius: '8px'}} />
               </div>
 
               <div className="form-group" style={{position: 'relative'}}>
@@ -446,7 +466,7 @@ export default function AuthPage() {
               )}
 
               <button type="submit" className="btn-primary" disabled={isLoading} style={{width: '100%', padding: '0.75rem', background: 'var(--accent-primary)', color: 'white', border: 'none', borderRadius: '8px', cursor: isLoading ? 'wait' : 'pointer', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                {isLoading ? <Loader2 className="spin-animation" size={20} /> : (isLogin ? 'Authenticate' : 'Complete Registration')}
+                {isLoading ? <Loader2 className="spin-animation" size={20} /> : (isLogin ? 'Login' : 'Complete Registration')}
               </button>
               {!isLogin && (
                 <button type="button" onClick={() => setSignupStep(1)} style={{width: '100%', marginTop: '0.5rem', padding: '0.5rem', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer'}}>
@@ -483,7 +503,7 @@ export default function AuthPage() {
 
         {isLogin && (
           <div style={{marginTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '2rem'}}>
-             <button type="button" onClick={() => setIsForgotUsername(true)} style={{color: 'var(--text-secondary)', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem'}}>
+             <button type="button" onClick={() => setIsForgotUsername(true)} style={{color: 'var(--accent-primary)', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem'}}>
                Forgot Username?
              </button>
              <button type="button" onClick={() => setIsForgotPassword(true)} style={{color: 'var(--accent-primary)', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem'}}>

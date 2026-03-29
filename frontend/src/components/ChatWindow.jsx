@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Shield, Send, Lock, Mic, Square, Paperclip, Trash2, Camera, Check, CheckCheck, Smile, CornerUpLeft, ArrowLeft } from 'lucide-react';
+import { Shield, Send, Lock, Mic, Square, Paperclip, Trash2, Camera, Check, CheckCheck, Smile, CornerUpLeft, ArrowLeft, MoreVertical, Pin, PinOff } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import CameraCropper from '../components/CameraCropper';
+import ConfirmModal from './ConfirmModal';
 import { useToast } from '../context/ToastContext';
 import '../pages/ChatPage.css';
 
@@ -26,6 +27,11 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
   const [audioBlobPreview, setAudioBlobPreview] = useState(null);
   const [showCameraMode, setShowCameraMode] = useState(false);
   const [audioBands, setAudioBands] = useState([8, 8, 8, 8, 8]);
+  const [showMenu, setShowMenu] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
+  const [isPinned, setIsPinned] = useState(false);
+
+
   
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -45,9 +51,11 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
       if (chat) {
         const name = chat.senderUsername === username ? chat.receiverUsername : chat.senderUsername;
         setPeerName(name);
+        setIsPinned(chat.isPinned);
       }
     });
   }, [chatRequestId, username]);
+
 
   useEffect(() => {
     if(!peerName || peerName === 'Secure Comm Link') return;
@@ -212,9 +220,44 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
     }
   };
 
+  const deleteConnection = () => {
+    setConfirmModal({ isOpen: true, type: 'DELETE' });
+  };
+
+  const reportTrustIssue = () => {
+    setConfirmModal({ isOpen: true, type: 'TRUST_ISSUE' });
+  };
+
+  const confirmAction = async () => {
+    try {
+        if (confirmModal.type === 'DELETE') {
+            await api.delete(`/requests/${chatRequestId}`);
+            toast.success("Connection terminated successfully.");
+        } else {
+            await api.delete(`/requests/${chatRequestId}/trust-issue`);
+            toast.info("Trust issue reported and link terminated.");
+        }
+        setConfirmModal({ isOpen: false, type: null });
+        if (onBack) onBack(); else navigate('/dashboard');
+    } catch (err) {
+        toast.error("Action failed.");
+    }
+  };
+
+  const togglePin = async () => {
+    try {
+      await api.post(`/requests/${chatRequestId}/pin`);
+      setIsPinned(!isPinned);
+      setShowMenu(false);
+      toast.success(isPinned ? "Chat unpinned" : "Chat pinned");
+    } catch (err) {
+      toast.error("Failed to pin/unpin chat.");
+    }
+  };
+
   return (
-    <div className="chat-container" style={{height: '100%', borderRadius: '12px', overflow: 'hidden'}}>
-      <header className="chat-header glass-panel" style={{borderRadius: '0'}}>
+    <div className="chat-container" style={{height: '100%', borderRadius: '12px', display: 'flex', flexDirection: 'column'}}>
+      <header className="chat-header glass-panel" style={{borderRadius: '0', position: 'relative', zIndex: 1000, flexShrink: 0}}>
         {onBack && (
           <button onClick={onBack} className="btn-icon back-btn">
             <ArrowLeft size={20} />
@@ -224,7 +267,63 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
           {peerAvatar ? <img src={peerAvatar} alt="Avatar" style={{width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover'}} /> : <Shield color="var(--accent-primary)" size={24} />}
           <h2 style={{textTransform: 'capitalize'}}>{peerName}</h2>
         </div>
-        <ThemeToggle />
+        <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+          <ThemeToggle />
+          <div style={{position: 'relative'}}>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
+              className="btn-icon"
+              style={{background: 'rgba(255,255,255,0.05)', borderRadius: '8px'}}
+            >
+              <MoreVertical size={20} />
+            </button>
+            {showMenu && (
+              <div 
+                className="glass-panel" 
+                style={{
+                  position: 'absolute', 
+                  top: 'calc(100% + 10px)', 
+                  right: 0, 
+                  zIndex: 2000, 
+                  minWidth: '200px', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  overflow: 'hidden', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  border: '1px solid var(--border)', 
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                  padding: '5px'
+                }}
+              >
+                <button 
+                  style={{padding: '12px 16px', background: 'transparent', border: 'none', color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px'}}
+                  onClick={togglePin}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  {isPinned ? <><PinOff size={16} /> Unpin Chat</> : <><Pin size={16} /> Pin Chat</>}
+                </button>
+                <button 
+                  style={{padding: '12px 16px', background: 'transparent', border: 'none', color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px'}}
+                  onClick={() => { setShowMenu(false); deleteConnection(); }}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  <Trash2 size={16} /> Disconnect
+                </button>
+                <button 
+                  style={{padding: '12px 16px', background: 'transparent', border: 'none', color: 'var(--danger)', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px'}}
+                  onClick={() => { setShowMenu(false); reportTrustIssue(); }}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  <Shield size={16} /> Report Trust Issue
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
       </header>
 
       <div className="messages-area glass-panel" style={{borderRadius: '0'}} onClick={() => setActiveMessageOptions(null)}>
@@ -330,6 +429,17 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
       </form>
 
       {showCameraMode && <CameraCropper onClose={() => setShowCameraMode(false)} onSend={p => { sendMediaMessage(p, 'IMAGE'); setShowCameraMode(false); }} />}
+      
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.type === 'DELETE' ? "Terminate Link?" : "Report Trust Issue?"}
+        message={confirmModal.type === 'DELETE' 
+          ? `Disconnect from ${peerName}? All transmission history will be permanently deleted.` 
+          : `Report a security breach/trust issue with ${peerName}? This connection was terminated and their trust score will be penalized.`}
+        confirmText={confirmModal.type === 'DELETE' ? "Terminate" : "Report & Terminate"}
+        onConfirm={confirmAction}
+        onCancel={() => setConfirmModal({ isOpen: false, type: null })}
+      />
     </div>
   );
 }

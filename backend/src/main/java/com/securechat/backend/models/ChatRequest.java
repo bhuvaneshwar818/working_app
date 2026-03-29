@@ -34,4 +34,10 @@ public class ChatRequest {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Builder.Default
+    private boolean senderPinned = false;
+
+    @Builder.Default
+    private boolean receiverPinned = false;
 }

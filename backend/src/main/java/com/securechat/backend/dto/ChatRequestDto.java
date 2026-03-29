@@ -19,4 +19,5 @@ public class ChatRequestDto {
     private RequestStatus status;
     private LocalDateTime createdAt;
     private Long unreadCount;
+    private boolean isPinned;
 }

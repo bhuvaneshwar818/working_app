@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Routes, Route, useLocation } from 'react-router-dom';
-import { Search, UserPlus, Check, X, MessageSquare, LogOut, Shield, ShieldAlert, Zap, User, Settings } from 'lucide-react';
+import { Search, UserPlus, Check, X, MessageSquare, LogOut, Shield, ShieldAlert, Zap, User, Settings, Trash2, MoreVertical, Pin, PinOff } from 'lucide-react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import api from '../api';
@@ -29,6 +29,9 @@ export default function Dashboard() {
   const [pendingDarkRooms, setPendingDarkRooms] = useState(0);
   const [unreadEvapTotal, setUnreadEvapTotal] = useState(0);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, peerName: '' });
+
+
 
   const myUsername = localStorage.getItem('username');
 
@@ -141,7 +144,37 @@ export default function Dashboard() {
     } catch (err) { toast.error('Failed to reject'); }
   };
 
+  const handleDeleteConnection = (id, peerName) => {
+    setDeleteModal({ isOpen: true, id, peerName });
+  };
+
+  const confirmDeleteConnection = async () => {
+    const { id, peerName } = deleteModal;
+    try {
+      await api.delete(`/requests/${id}`);
+      toast.success(`Connection with ${peerName} terminated.`);
+      setDeleteModal({ isOpen: false, id: null, peerName: '' });
+      fetchDashboardData();
+      if (location.pathname.includes(`/chat/${id}`)) {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      toast.error("Failed to terminate connection.");
+    }
+  };
+
+  const handleTogglePin = async (id) => {
+    try {
+      await api.post(`/requests/${id}/pin`);
+      fetchDashboardData();
+      setActiveSidebarMenu(null);
+    } catch (err) {
+      toast.error("Failed to pin/unpin chat.");
+    }
+  };
+
   const handleLogout = () => setIsLogoutModalOpen(true);
+
 
   // Stats calculation
   const getStats = () => {
@@ -183,43 +216,52 @@ export default function Dashboard() {
             />
           </div>
           <div className="active-chats-list" style={{display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '300px', overflowY: 'auto'}}>
-            {activeChats.filter(chat => {
-              const peerName = chat.senderUsername === myUsername ? chat.receiverUsername : chat.senderUsername;
-              return peerName.toLowerCase().includes(chatSearchTerm.toLowerCase());
-            }).map(chat => {
-              const peerName = chat.senderUsername.toLowerCase() === myUsername.toLowerCase() ? chat.receiverUsername : chat.senderUsername;
-              const isOnline = onlineUsers.includes(peerName);
-              const isActive = location.pathname.includes(`/chat/${chat.id}`);
-              return (
-                <button 
-                  key={chat.id} 
-                  className={`btn-secondary ${isActive ? 'active' : ''}`}
-                  style={{
-                    textAlign: 'left', padding: '10px 12px', 
-                    background: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent', 
-                    borderRadius: '8px', border: 'none', width: '100%', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    transition: '0.2s'
-                  }}
-                  onClick={() => navigate(`/dashboard/chat/${chat.id}`, { state: { peerName } })}
-                >
-                  <div style={{display: 'flex', alignItems: 'center', gap: '10px', position: 'relative'}}>
-                    <div style={{position: 'relative'}}>
-                        <div style={{width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid var(--border)'}}>
-                            {chat.peerProfilePicture ? (
-                                <img src={chat.peerProfilePicture} alt="Peer" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-                            ) : (
-                                <User size={20} color={isOnline ? 'var(--success)' : 'var(--text-secondary)'} />
-                            )}
-                        </div>
-                        {isOnline && <div style={{position: 'absolute', bottom: '0', right: '0', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', border: '2px solid var(--bg-secondary)'}}></div>}
+            {activeChats
+              .sort((a, b) => (b.isPinned === a.isPinned ? 0 : b.isPinned ? 1 : -1))
+              .filter(chat => {
+                const peerName = chat.senderUsername === myUsername ? chat.receiverUsername : chat.senderUsername;
+                return peerName.toLowerCase().includes(chatSearchTerm.toLowerCase());
+              }).map(chat => {
+                const peerName = chat.senderUsername.toLowerCase() === myUsername.toLowerCase() ? chat.receiverUsername : chat.senderUsername;
+                const isOnline = onlineUsers.includes(peerName);
+                const isActive = location.pathname.includes(`/chat/${chat.id}`);
+                return (
+                  <button 
+                    key={chat.id} 
+                    className={`btn-secondary ${isActive ? 'active' : ''}`}
+                    style={{
+                      textAlign: 'left', padding: '10px 12px', 
+                      background: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent', 
+                      borderRadius: '8px', border: 'none', width: '100%', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      transition: '0.2s',
+                      position: 'relative'
+                    }}
+                    onClick={() => navigate(`/dashboard/chat/${chat.id}`, { state: { peerName } })}
+                  >
+                    <div style={{display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', flex: 1, minWidth: 0}}>
+                      <div style={{position: 'relative', flexShrink: 0}}>
+                          <div style={{width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid var(--border)'}}>
+                              {chat.peerProfilePicture ? (
+                                  <img src={chat.peerProfilePicture} alt="Peer" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                              ) : (
+                                  <User size={20} color={isOnline ? 'var(--success)' : 'var(--text-secondary)'} />
+                              )}
+                          </div>
+                          {isOnline && <div style={{position: 'absolute', bottom: '0', right: '0', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', border: '2px solid var(--bg-secondary)'}}></div>}
+                      </div>
+                      <span style={{fontWeight: chat.unreadCount > 0 ? 'bold' : 'normal', fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '4px'}}>
+                        {chat.isPinned && <Pin size={10} color="var(--accent-primary)" style={{transform: 'rotate(45deg)'}} />}
+                        {peerName}
+                      </span>
                     </div>
-                    <span style={{fontWeight: chat.unreadCount > 0 ? 'bold' : 'normal', fontSize: '0.95rem'}}>{peerName}</span>
-                  </div>
-                  {chat.unreadCount > 0 && <span style={{background: 'var(--accent-primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 'bold'}}>{chat.unreadCount}</span>}
-                </button>
-              )
-            })}
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0}}>
+                      {chat.unreadCount > 0 && <span style={{background: 'var(--accent-primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 'bold'}}>{chat.unreadCount}</span>}
+                    </div>
+                  </button>
+                )
+              })}
+
             {activeChats.length === 0 && <div className="empty-state" style={{fontSize: '0.8rem', padding: '1rem', textAlign: 'center', opacity: 0.5}}>No active chats.</div>}
           </div>
         </div>
@@ -355,6 +397,15 @@ export default function Dashboard() {
         message="Are you sure you want to end your secure session?"
         onConfirm={() => { localStorage.clear(); navigate('/auth'); }}
         onCancel={() => setIsLogoutModalOpen(false)}
+      />
+
+      <ConfirmModal 
+        isOpen={deleteModal.isOpen}
+        title="Terminate Connection?"
+        message={`Are you sure you want to end your secure link with ${deleteModal.peerName}? All conversation history will be permanently erased.`}
+        confirmText="Terminate Link"
+        onConfirm={confirmDeleteConnection}
+        onCancel={() => setDeleteModal({ isOpen: false, id: null, peerName: '' })}
       />
     </div>
   );
