@@ -197,4 +197,14 @@ public class MessageService {
             messageRepository.deleteAll(seenEvaporating);
         }
     }
+
+    public UUID findRequestIdByParticipants(String username1, String username2) {
+        User u1 = userRepository.findByUsername(username1).orElse(null);
+        User u2 = userRepository.findByUsername(username2).orElse(null);
+        if (u1 == null || u2 == null) return null;
+        
+        return chatRequestRepository.findRequestBetweenUsers(u1, u2)
+                .map(ChatRequest::getId)
+                .orElse(null);
+    }
 }

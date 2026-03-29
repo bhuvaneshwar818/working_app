@@ -8,4 +8,5 @@ public class DarkRoomMessageDto {
     private String roomId;
     private String content;
     private com.securechat.backend.enums.MessageType type;
+    private Integer evaporateTime;
 }

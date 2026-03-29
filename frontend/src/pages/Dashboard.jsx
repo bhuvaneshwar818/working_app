@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [searchError, setSearchError] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [pendingDarkRooms, setPendingDarkRooms] = useState(0);
+  const [unreadEvapTotal, setUnreadEvapTotal] = useState(0);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const myUsername = localStorage.getItem('username');
@@ -56,6 +57,11 @@ export default function Dashboard() {
       if (profileRes.data.profilePicture) {
           setMyProfilePic(profileRes.data.profilePicture);
       }
+
+      try {
+        const evapRes = await api.get('/evaporator/unread-senders-count');
+        setUnreadEvapTotal(evapRes.data);
+      } catch (err) { console.error('Failed to fetch unread evap count', err); }
     } catch (err) {
       console.error('Data fetch failed', err);
     }
@@ -72,7 +78,11 @@ export default function Dashboard() {
          webSocketFactory: () => new SockJS(`http://${window.location.hostname}:8080/ws`),
          connectHeaders: { Authorization: `Bearer ${token}` },
          onConnect: () => {
-            client.subscribe('/user/queue/updates', () => fetchDashboardData());
+            client.subscribe('/user/queue/updates', (msg) => {
+               if (msg.body === 'NEW_MESSAGE' || msg.body === 'MESSAGE_READ' || msg.body.startsWith('NEW_EVAP_MESSAGE')) {
+                  fetchDashboardData();
+               }
+            });
          }
        });
        client.activate();
@@ -227,7 +237,10 @@ export default function Dashboard() {
           <button className="btn-secondary" onClick={() => navigate('/evaporator')} style={{padding: '0.85rem 1.25rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.08)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', gap: '0.8rem', width: '100%', transition: 'all 0.2s'}}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-             <Zap size={20} /> <span style={{fontWeight: 700}}>SECURE ACCESS</span>
+             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
+               <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><Zap size={20} /> <span style={{fontWeight: 700}}>SECURE ACCESS</span></div>
+               {unreadEvapTotal > 0 && <span style={{background: 'var(--danger)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)'}}>{unreadEvapTotal}</span>}
+             </div>
           </button>
 
           <button className="btn-secondary" onClick={() => navigate('/profile')} style={{padding: '0.85rem 1.25rem', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-secondary)', border: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', gap: '0.8rem', width: '100%', transition: 'all 0.2s'}}

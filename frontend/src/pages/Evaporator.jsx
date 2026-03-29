@@ -13,10 +13,11 @@ export default function Evaporator() {
   const navigate = useNavigate();
   const [view, setView] = useState('list');
   const [activeChats, setActiveChats] = useState([]);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
   
   const [roomHash, setRoomHash] = useState('');
   const [peerName, setPeerName] = useState('');
-  
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   const [stompClient, setStompClient] = useState(null);
@@ -25,12 +26,12 @@ export default function Evaporator() {
   const [audioTimer, setAudioTimer] = useState(0);
   const [audioBlobPreview, setAudioBlobPreview] = useState(null);
   const [showCameraMode, setShowCameraMode] = useState(false);
+  const [evaporateTime, setEvaporateTime] = useState(10);
   const [audioBands, setAudioBands] = useState([8, 8, 8, 8, 8]);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const animationFrameRef = useRef(null);
-  
   const timerIntervalRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -41,17 +42,54 @@ export default function Evaporator() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const [onlineUsers, setOnlineUsers] = useState([]);
-
   useEffect(() => {
     if (view === 'list') {
       api.get('/requests/active').then(res => setActiveChats(res.data)).catch(console.error);
       api.get('/users/online').then(res => setOnlineUsers(res.data)).catch(console.error);
+      api.get('/evaporator/unread-counts').then(res => {
+         if (res.data) setUnreadCounts(res.data);
+      }).catch(console.error);
     }
   }, [view]);
 
+  // Handle in-memory unread counts for volatile messages
+  useEffect(() => {
+    let client = null;
+    if (token && view === 'list') {
+       client = new Client({
+          webSocketFactory: () => new SockJS(`http://${window.location.hostname}:8080/ws`),
+          connectHeaders: { Authorization: `Bearer ${token}` },
+          onConnect: () => {
+             client.subscribe('/user/queue/updates', (msg) => {
+                if (msg.body.startsWith('NEW_EVAP_MESSAGE:')) {
+                   const sender = msg.body.split(':')[1];
+                   setUnreadCounts(prev => ({
+                      ...prev,
+                      [sender]: (prev[sender] || 0) + 1
+                   }));
+                }
+             });
+          }
+       });
+       client.activate();
+    }
+    return () => { if(client) client.deactivate(); };
+  }, [token, view]);
+
   const joinEvaporator = (peer) => {
     setPeerName(peer);
+    setUnreadCounts(prev => ({...prev, [peer]: 0}));
+    
+    // Fetch and instantly vaporize messages from the separate DB table
+    api.get(`/evaporator/messages/${peer}`).then(res => {
+       setMessages(res.data);
+       res.data.forEach(msg => {
+          if (msg.evaporateTime) {
+             setTimeout(() => removeMessageLocally(msg.id), msg.evaporateTime * 1000);
+          }
+       });
+    }).catch(console.error);
+
     const hash = [username, peer].sort().join('-evap-');
     setRoomHash(hash);
     setView('chat');
@@ -65,6 +103,9 @@ export default function Evaporator() {
           if (msg.body) {
             const body = JSON.parse(msg.body);
             setMessages((prev) => [...prev, body]);
+            if (body.evaporateTime) {
+               setTimeout(() => removeMessageLocally(body.id), body.evaporateTime * 1000);
+            }
           }
         });
       },
@@ -92,7 +133,8 @@ export default function Evaporator() {
         roomId: roomHash,
         content: messageInput,
         id: tempId,
-        type: 'TEXT'
+        type: 'TEXT',
+        evaporateTime
       };
       
       stompClient.publish({
@@ -198,6 +240,7 @@ export default function Evaporator() {
         content: base64,
         id: tempId,
         type: type,
+        evaporateTime
       };
       stompClient.publish({
         destination: '/app/evaporator.sendMessage',
@@ -243,7 +286,7 @@ export default function Evaporator() {
                     <button 
                       key={chat.id} className="btn-secondary" 
                       onClick={() => joinEvaporator(peer)}
-                      style={{padding: '1rem', background: 'var(--glass-bg)', color: 'var(--text-primary)', border: '1px solid rgba(217, 70, 239, 0.3)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', fontWeight: 'bold'}}
+                      style={{padding: '1rem', background: 'var(--glass-bg)', color: 'var(--text-primary)', border: '1px solid rgba(217, 70, 239, 0.3)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}
                     >
                       <div style={{display: 'flex', alignItems: 'center', position: 'relative'}}>
                         {onlineUsers.includes(peer) && (
@@ -260,6 +303,7 @@ export default function Evaporator() {
                         )}
                         <span style={{lineHeight: '1'}}>Evaporate with: {peer}</span>
                       </div>
+                      {(unreadCounts[peer] || 0) > 0 && <span style={{background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'}}>{unreadCounts[peer]}</span>}
                     </button>
                   )
                 })}
@@ -288,7 +332,7 @@ export default function Evaporator() {
                 return (
                   <div key={msg.id || index} onClick={() => removeMessageLocally(msg.id)} style={{cursor: 'pointer'}} title="Click to Vaporize" className={`message-wrapper ${isMe ? 'message-right' : 'message-left'} animate-fade-in`}>
                     {!isMe && <div className="message-sender" style={{color: 'var(--text-secondary)'}}>{msg.senderUsername}</div>}
-            <div className={`message-bubble ${isMe ? 'bubble-me-ghost' : 'bubble-them-ghost'}`} style={Object.assign({padding: msg.messageType === 'IMAGE' ? '0.5rem' : ''}, isMe ? {background: 'linear-gradient(135deg, var(--accent-secondary), var(--accent-primary))'} : {})}>
+            <div className={`message-bubble ${isMe ? 'bubble-me' : 'bubble-them'}`} style={Object.assign({padding: msg.messageType === 'IMAGE' ? '0.5rem' : ''})}>
               {msg.messageType === 'IMAGE' ? (
                  <div style={{display:'flex', flexDirection:'column', gap:'0.5rem'}}>
                    {msg.content?.includes('{"image":') ? (
@@ -316,7 +360,14 @@ export default function Evaporator() {
           <form className="chat-input-area" onSubmit={sendMessage} style={{flexShrink: 0, border: '1px solid rgba(255, 62, 62, 0.2)', background:'var(--bg-color)', padding:'1rem', display:'flex', gap:'1rem', borderRadius: '12px', marginTop: '1rem', alignItems: 'center'}}>
             
         {!isRecording && !audioBlobPreview && (
-            <div style={{display: 'flex', gap: '0.25rem'}}>
+            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+                <select value={evaporateTime} onChange={(e) => setEvaporateTime(Number(e.target.value))} style={{background: 'rgba(255,0,0,0.1)', color: 'var(--danger)', border: '1px solid rgba(255, 62, 62, 0.3)', borderRadius: '6px', padding: '4px', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center'}} title="Evaporation Timer">
+                   <option value={5}>5s</option>
+                   <option value={10}>10s</option>
+                   <option value={30}>30s</option>
+                   <option value={60}>1m</option>
+                   <option value={300}>5m</option>
+                </select>
                 <button type="button" onClick={() => setShowCameraMode(true)} style={{color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0}} title="Camera Capture" disabled={!stompClient}>
                    <Camera size={20} />
                 </button>
