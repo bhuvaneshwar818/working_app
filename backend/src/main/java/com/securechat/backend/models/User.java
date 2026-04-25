@@ -49,6 +49,10 @@ public class User {
     @Column(nullable = false, columnDefinition = "int default 0")
     private int successfulConnectionsCount = 0;
 
+    public boolean isProfilePhotoPublic() {
+        return "ALL".equalsIgnoreCase(profileVisibility);
+    }
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }
