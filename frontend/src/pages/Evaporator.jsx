@@ -264,7 +264,7 @@ export default function Evaporator() {
           </button>
           <div className="chat-title" style={{color: 'var(--accent-secondary)'}}>
             <Zap size={24} />
-            <h2 style={{textTransform: 'capitalize'}}>{peerName ? peerName : 'Evaporator Protocol'}</h2>
+            <h2 style={{textTransform: 'capitalize'}}>{peerName ? peerName : 'Evaporation Mode'}</h2>
           </div>
         </div>
         <ThemeToggle />
@@ -274,7 +274,7 @@ export default function Evaporator() {
         <div className="darkroom-dashboard">
           <div className="glass-panel" style={{padding: '2rem', borderRadius: '12px', border: '1px solid rgba(217, 70, 239, 0.2)'}}>
             <h3 style={{color: 'var(--accent-secondary)'}}><Zap size={20}/> Pure Volatile Chat</h3>
-            <p style={{color: 'var(--text-secondary)'}}>No security PINs required. Traces dissolve immediately. Choose an active peer to begin.</p>
+            <p style={{color: 'var(--text-secondary)'}}>These messages NO Longer Store anywhere. They will disappear once your partner seen them.</p>
             
             <div style={{marginTop: '2rem'}}>
               <h4 style={{color: 'var(--text-primary)'}}>Your Active Connections</h4>
@@ -301,7 +301,7 @@ export default function Evaporator() {
                              }} 
                            />
                         )}
-                        <span style={{lineHeight: '1'}}>Evaporate with: {peer}</span>
+                        <span style={{lineHeight: '1'}}>{peer}</span>
                       </div>
                       {(unreadCounts[peer] || 0) > 0 && <span style={{background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'}}>{unreadCounts[peer]}</span>}
                     </button>
@@ -317,13 +317,13 @@ export default function Evaporator() {
         <div className="darkroom-chat-view" style={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}>
           <div className="messages-area glass-panel darkroom-messages" style={{flex: 1, overflowY: 'auto', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(217, 70, 239, 0.2)', padding: '1rem', display: 'flex', flexDirection: 'column'}}>
             <div className="encryption-notice" style={{color: 'var(--accent-secondary)', borderColor: 'rgba(217, 70, 239, 0.2)', background: 'rgba(217, 70, 239, 0.05)'}}>
-              <Zap size={14} /> EPHEMERAL MODE ACTIVE - CLICK A MESSAGE TO INSTANTLY VAPORIZE IT
+              <Zap size={14} /> EVAPORATION MODE ACTIVE - CLICK A MESSAGE TO INSTANTLY VAPORIZE IT
             </div>
             
             {messages.length === 0 ? (
               <div className="empty-chat animate-fade-in" style={{textAlign: 'center', marginTop: '2rem'}}>
                 <Zap size={64} style={{color: 'var(--accent-secondary)', opacity: 0.5, marginBottom: '1rem'}} />
-                <h3 style={{color: 'white'}}>Ghosts in the shell</h3>
+                <h3 style={{color: 'white'}}>No Longer Visible</h3>
                 <p style={{color: 'var(--text-secondary)'}}>Start typing. Traces are wiped from existence when you close the app or click them.</p>
               </div>
             ) : (
@@ -403,7 +403,7 @@ export default function Evaporator() {
             )}
 
             {!isRecording && !audioBlobPreview && (
-                <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="Transmit untraceable data..." style={{flex: 1, background: 'transparent', border:'none', color:'var(--text-primary)', fontSize: '1rem', height: '28px', padding: 0}} />
+                <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="send message..." style={{flex: 1, background: 'transparent', border:'none', color:'var(--text-primary)', fontSize: '1rem', height: '28px', padding: 0}} />
             )}
             
             <button type="submit" className="btn-cyber" style={{padding: '0.5rem 1rem', background: 'var(--accent-secondary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}} disabled={(!messageInput.trim() && !audioBlobPreview) || isRecording}>

@@ -16,7 +16,7 @@ public class UserProfileDto {
     private String email;
     private String mobileNumber;
     private String profilePicture;
-    private boolean profilePhotoPublic;
+    private String profileVisibility;
     private boolean allowIncomingRequests;
     private int trustBreakCount;
     private int successfulConnectionsCount;

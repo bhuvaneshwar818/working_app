@@ -8,6 +8,7 @@ import com.securechat.backend.models.User;
 import com.securechat.backend.repository.DarkRoomRoomRepository;
 import com.securechat.backend.repository.DarkRoomMessageRepository;
 import com.securechat.backend.repository.UserRepository;
+import com.securechat.backend.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class DarkRoomService {
     private final DarkRoomMessageRepository darkRoomMessageRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EncryptionUtil encryptionUtil;
 
     // Track active online keys inserted in the last few seconds
     private final ConcurrentHashMap<UUID, Set<String>> activeKeys = new ConcurrentHashMap<>();
@@ -161,7 +163,7 @@ public class DarkRoomService {
         DarkRoomMessage msg = DarkRoomMessage.builder()
                 .darkRoom(room)
                 .sender(sender)
-                .content(content)
+                .content(encryptionUtil.encrypt(content))
                 .messageType(type != null ? type : com.securechat.backend.enums.MessageType.TEXT)
                 .build();
         darkRoomMessageRepository.save(msg);
@@ -179,7 +181,7 @@ public class DarkRoomService {
                 .id(msg.getId())
                 .chatRequestId(roomId)
                 .senderUsername(msg.getSender().getUsername())
-                .content(msg.getContent())
+                .content(encryptionUtil.decrypt(msg.getContent()))
                 .messageType(msg.getMessageType())
                 .status(com.securechat.backend.enums.MessageStatus.DELIVERED)
                 .createdAt(msg.getCreatedAt())

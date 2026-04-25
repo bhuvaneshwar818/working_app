@@ -30,8 +30,7 @@ export default function Dashboard() {
   const [unreadEvapTotal, setUnreadEvapTotal] = useState(0);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, peerName: '' });
-
-
+  const [isSearching, setIsSearching] = useState(false);
 
   const myUsername = localStorage.getItem('username');
 
@@ -99,15 +98,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (searchUsername.trim().length > 1) {
+       setIsSearching(true);
        const timer = setTimeout(async () => {
           try {
              const res = await api.get(`/users/search?q=${searchUsername}`);
              setSearchResultsArray(res.data);
           } catch (e) { setSearchResultsArray([]); }
+          finally { setIsSearching(false); }
        }, 300);
        return () => clearTimeout(timer);
     } else {
        setSearchResultsArray([]);
+       setIsSearching(false);
     }
   }, [searchUsername]);
 
@@ -202,7 +204,7 @@ export default function Dashboard() {
         <div className="sidebar-section">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              <MessageSquare size={14} style={{marginRight: '6px'}}/> Active Chats 
+              <MessageSquare size={14} style={{marginRight: '6px'}}/> Active Connections
             </h3>
           </div>
           <div style={{ position: 'relative', marginBottom: '12px' }}>
@@ -271,7 +273,7 @@ export default function Dashboard() {
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'; e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><ShieldAlert size={20} /> <span style={{fontWeight: 700}}>DARK ROOM</span></div>
+              <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><ShieldAlert size={20} /> <span style={{fontWeight: 700}}>DARK SPACE</span></div>
               {pendingDarkRooms > 0 && <span style={{background: 'var(--danger)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)'}}>{pendingDarkRooms}</span>}
             </div>
           </button>
@@ -280,7 +282,7 @@ export default function Dashboard() {
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
-               <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><Zap size={20} /> <span style={{fontWeight: 700}}>SECURE ACCESS</span></div>
+               <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><Zap size={20} /> <span style={{fontWeight: 700}}>EVAPORATION MODE</span></div>
                {unreadEvapTotal > 0 && <span style={{background: 'var(--danger)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)'}}>{unreadEvapTotal}</span>}
              </div>
           </button>
@@ -294,7 +296,7 @@ export default function Dashboard() {
           <button className="btn-secondary" onClick={handleLogout} style={{padding: '0.85rem 1.25rem', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '0.8rem', width: '100%', transition: 'all 0.2s'}}
              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              <LogOut size={20} /> <span style={{fontWeight: 700}}>EXIT VAULT</span>
+              <LogOut size={20} /> <span style={{fontWeight: 700}}>LOG OUT</span>
           </button>
         </div>
       </aside>
@@ -306,7 +308,7 @@ export default function Dashboard() {
             <div style={{padding: '2rem 3rem', height: '100%', overflowY: 'auto'}}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <header>
-                  <h1 style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>Base <span className="gradient-text">Operations</span></h1>
+                  <h1 style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>My <span className="gradient-text">Profile</span></h1>
                   <p style={{color: 'var(--text-secondary)', fontSize: '1.1rem'}}>Secure encrypted environment active for {myUsername}.</p>
                 </header>
                 
@@ -325,11 +327,11 @@ export default function Dashboard() {
                 </section>
 
                 <section className="glass-panel" style={{padding: '1.5rem'}}>
-                  <h3 style={{display:'flex', alignItems:'center', gap:'0.5rem', marginBottom: '1rem'}}><UserPlus size={18} color="var(--accent-primary)"/> Establish New Link</h3>
+                  <h3 style={{display:'flex', alignItems:'center', gap:'0.5rem', marginBottom: '1rem'}}><UserPlus size={18} color="var(--accent-primary)"/> Search for New Connection</h3>
                   <div style={{position: 'relative'}}>
                       <div className="search-input-wrapper" style={{width: '100%'}}>
                         <Search className="search-icon" size={20} />
-                        <input type="text" placeholder="Search identity signatures..." value={searchUsername} onChange={(e) => setSearchUsername(e.target.value)} style={{width:'100%', padding:'12px 12px 12px 45px'}} />
+                        <input type="text" placeholder="Search by UserName..." value={searchUsername} onChange={(e) => setSearchUsername(e.target.value)} style={{width:'100%', padding:'12px 12px 12px 45px'}} />
                       </div>
                       
                       {searchResultsArray.length > 0 && (
@@ -340,9 +342,14 @@ export default function Dashboard() {
                                 {user.profilePicture ? <img src={user.profilePicture} style={{width:'32px', height:'32px', borderRadius:'50%'}} /> : <User size={16}/>}
                                 <span style={{fontWeight: 500}}>{user.username}</span>
                               </div>
-                              <button onClick={() => handleSendRequest(user.username)} className="btn-primary" style={{padding:'6px 12px', fontSize:'0.85rem'}} disabled={!user.allowIncomingRequests}>Link Peer</button>
+                              <button onClick={() => handleSendRequest(user.username)} className="btn-primary" style={{padding:'6px 12px', fontSize:'0.85rem'}} disabled={!user.allowIncomingRequests}>Send Request</button>
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {searchUsername.trim().length > 1 && searchResultsArray.length === 0 && !isSearching && (
+                        <div className="glass-panel" style={{position: 'absolute', top:'105%', left:0, right:0, zIndex: 100, padding: '1rem', textAlign: 'center', background:'var(--bg-secondary)', border:'1px solid var(--border)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', color: 'var(--text-secondary)'}}>
+                          No user found
                         </div>
                       )}
                   </div>
@@ -393,8 +400,8 @@ export default function Dashboard() {
 
       <ConfirmModal 
         isOpen={isLogoutModalOpen}
-        title="Exit the Vault?"
-        message="Are you sure you want to end your secure session?"
+        title="Log Out?"
+        message="Are you sure you want to log out?"
         onConfirm={() => { localStorage.clear(); navigate('/auth'); }}
         onCancel={() => setIsLogoutModalOpen(false)}
       />

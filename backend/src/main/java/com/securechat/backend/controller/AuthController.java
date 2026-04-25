@@ -97,10 +97,17 @@ public class AuthController {
         String phone = request.get("phone");
         String dob = request.get("dob");
         com.securechat.backend.models.User user = userRepository.findByEmail(email).orElse(null);
+        System.out.println("DEBUG: User match check for email: " + email + ", phone: " + phone + ", dob: " + dob);
         if (user != null && user.getMobileNumber() != null && user.getDob() != null && 
             user.getMobileNumber().equals(phone) && user.getDob().equals(dob)) {
+            System.out.println("DEBUG: User MATCHED! Sending username to email: " + email);
             String body = "SecureChat Gateway Architecture\n\nWe received a recovery request for your identity.\n\nYour Unique Official Username is: " + user.getUsername() + "\n\nIf you did not request this, please secure your account immediately.";
             otpService.sendGenericEmail(email, "SecureChat Identity Recovery", body);
+        } else {
+            System.out.println("DEBUG: User Match FAILED. User is null? " + (user==null));
+            if (user != null) {
+                System.out.println("DEBUG: Database has - Mobile: " + user.getMobileNumber() + ", DOB: " + user.getDob());
+            }
         }
         // Always return generic OK to strictly prevent active scraping of registered emails
         return ResponseEntity.ok("If your details match, your Username has been physically dispatched to your inbox.");

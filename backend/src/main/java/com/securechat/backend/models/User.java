@@ -37,10 +37,10 @@ public class User {
     private String profilePicture;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean profilePhotoPublic = true;
-
-    @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean allowIncomingRequests = true;
+
+    @Column(nullable = false, columnDefinition = "varchar(20) default 'ALL'")
+    private String profileVisibility = "ALL";
 
     // Trust tracking
     @Column(nullable = false, columnDefinition = "int default 0")

@@ -86,8 +86,8 @@ export default function DarkRoom() {
         // Subscribe to global status queue implicitly
         client.subscribe('/user/queue/darkroom-status', (msg) => {
           loadRooms();
-          if (msg.body === 'READY') toast.success("Secure Link Established. Vault is tightly sealed and ready.");
-          if (msg.body === 'ACCEPTED') toast.info("Peer has locked their encryption key. Finalize the vault now.");
+          if (msg.body === 'READY') toast.success("Dark Space Created. This Space is locked with both PINs.");
+          if (msg.body === 'ACCEPTED') toast.info("Peer has locked their encryption key. Finalize the Space now.");
         });
       },
       onDisconnect: () => {
@@ -125,12 +125,12 @@ export default function DarkRoom() {
                setView('chat'); 
            }, 1000);
         } else if (msg.body === 'COLLAPSED') {
-           toast.error("Peer disconnected abruptly. Vault collapsed globally.");
+           toast.error("Your partner has left from this Dark Space, so it collapsed globally.");
            handleLeaveRoom();
         } else if (msg.body.startsWith('WAITING_FOR_PEER_')) {
            const peer = msg.body.split('WAITING_FOR_PEER_')[1];
            if (peer !== username) {
-              toast.warning(`${peer} is waiting locally. Turn your key!`);
+              toast.warning(`${peer} is waiting for you. Enter your PIN!`);
            }
         }
      });
@@ -241,7 +241,7 @@ export default function DarkRoom() {
     if (!trustRoomId) return;
     try {
        await api.post(`/darkroom/${trustRoomId}/trust-issue`);
-       toast.success("Trust Issue Reported. Vault Collapsed.");
+       toast.success("Trust Issue Reported. Space Collapsed.");
        setIsTrustModalOpen(false);
        setTrustRoomId(null);
        loadRooms();
@@ -424,7 +424,7 @@ export default function DarkRoom() {
           </button>
           <div className="chat-title">
             <Shield size={24} color="var(--accent-primary)" />
-            <h2 style={{textTransform: 'capitalize'}}>{selectedRoom ? (selectedRoom.initiatorUsername === username ? selectedRoom.receiverUsername : selectedRoom.initiatorUsername) : 'Dark Room Command'}</h2>
+            <h2 style={{textTransform: 'capitalize'}}>{selectedRoom ? (selectedRoom.initiatorUsername === username ? selectedRoom.receiverUsername : selectedRoom.initiatorUsername) : 'Dark Space'}</h2>
           </div>
         </div>
         <ThemeToggle />
@@ -433,12 +433,12 @@ export default function DarkRoom() {
       {view === 'dashboard' && (
         <div className="darkroom-dashboard">
            <div className="glass-panel" style={{padding: '2rem', marginBottom: '1.5rem', borderRadius: '12px', position: 'relative', zIndex: 20}}>
-             <h3 style={{color: 'var(--accent-primary)', marginBottom: '1rem'}}>Initiate New Secure Connection</h3>
+             <h3 style={{color: 'var(--accent-primary)', marginBottom: '1rem'}}>New Secure Connection</h3>
              <form onSubmit={sendRequest} style={{position: 'relative'}}>
                <div style={{display:'flex', gap: '1rem'}}>
                  <input 
                     type="text" 
-                    placeholder="Search username in database..." 
+                    placeholder="Search by username..." 
                     value={targetUser} 
                     onChange={e=>setTargetUser(e.target.value)} 
                     required 
@@ -477,31 +477,31 @@ export default function DarkRoom() {
                                }} 
                              />
                           )}
-                          <div style={{fontWeight: 600, color: 'var(--accent-primary)', fontSize: '1.1rem', lineHeight: '1'}}>Vault: {peer}</div>
+                          <div style={{fontWeight: 600, color: 'var(--accent-primary)', fontSize: '1.1rem', lineHeight: '1'}}>Space: {peer}</div>
                         </div>
                         
-                        {room.status === 'PENDING' && isMeSender && <div style={{color:'var(--text-secondary)', fontSize: '0.9rem'}}>Phase 1: Awaiting {peer}'s 4-Digit Genesis Key.</div>}
+                        {room.status === 'PENDING' && isMeSender && <div style={{color:'var(--text-secondary)', fontSize: '0.9rem'}}>Phase 1: PIN creation by {peer} is pending.</div>}
                         
                         {room.status === 'PENDING' && !isMeSender && (
                           <div style={{marginTop: '0.5rem'}}>
-                             <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Inbound Vault Initialization Request. Generate your Secret Key 1.</p>
-                             <button className="btn-cyber" style={{width: '100%'}} onClick={() => openModal('accept', room)}>Lock In Genesis Key</button>
+                             <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Space initialization request received. Please generate the PIN if you trust the request.</p>
+                             <button className="btn-cyber" style={{width: '100%'}} onClick={() => openModal('accept', room)}>Generate PIN</button>
                           </div>
                         )}
 
-                        {room.status === 'ACCEPTED' && !isMeSender && <div style={{color:'var(--text-secondary)', fontSize: '0.9rem'}}>Phase 2: Awaiting {peer}'s 4-Digit Finalization Key.</div>}
+                        {room.status === 'ACCEPTED' && !isMeSender && <div style={{color:'var(--text-secondary)', fontSize: '0.9rem'}}>Phase 2: PIN creation by {peer} is pending.</div>}
 
                         {room.status === 'ACCEPTED' && isMeSender && (
                            <div style={{marginTop: '0.5rem'}}>
-                             <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>{peer} has completed Phase 1. Finalize the Vault with your Secret Key 2.</p>
-                             <button className="btn-cyber" style={{width: '100%'}} onClick={() => openModal('finalize', room)}>Seal Vault Permanently</button>
+                             <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>{peer} has generated his PIN. Now Generate your PIN.</p>
+                             <button className="btn-cyber" style={{width: '100%'}} onClick={() => openModal('finalize', room)}>Generate PIN</button>
                           </div>
                         )}
 
                         {room.status === 'READY' && (
                            <div style={{display: 'flex', gap: '0.5rem', marginTop: 'auto'}}>
                                <button className="btn-cyber" style={{flex: 1}} onClick={() => openModal('unlock', room)}>
-                                   <RadioTower size={18} /> Initiate Synchronized Breach
+                                   <RadioTower size={18} />Enter Into Dark Space
                                </button>
                                <button 
                                  className="btn-secondary" 
@@ -540,23 +540,23 @@ export default function DarkRoom() {
               {modalType === 'waiting_peer' ? (
                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem'}}>
                     <div className="blinking-indicator" />
-                    <h3 style={{color: 'var(--accent-primary)'}}>Turn-Key Actuated</h3>
-                    <p style={{color: 'var(--text-secondary)'}}>Your lock is disengaged. Pinging your peer for simultaneous entry.</p>
-                    <p style={{color: 'white'}}>Vault will collapse locally if key window expires.</p>
-                    <button className="btn-cancel" onClick={handleLeaveRoom}>Abort Breach</button>
+                    <h3 style={{color: 'var(--accent-primary)'}}>Turn-Key Activated</h3>
+                    <p style={{color: 'var(--text-secondary)'}}>Your lock is disengaged. Waiting for the other user to enter the Space.</p>
+                    <p style={{color: 'white'}}>Space will collapse locally if key window expires.</p>
+                    <button className="btn-cancel" onClick={handleLeaveRoom}>Abort Space</button>
                  </div>
               ) : (
                 <form onSubmit={handleModalSubmit}>
                    <Shield size={48} color="var(--accent-primary)" style={{marginBottom: '1rem'}} />
                    <h2 style={{color: 'white', marginBottom: '0.5rem'}}>
-                      {modalType === 'accept' && 'Genesis Pin Configuration'}
-                      {modalType === 'finalize' && 'Finalize Vault Locks'}
-                      {modalType === 'unlock' && 'Synchronous Breach Required'}
+                      {modalType === 'accept' && 'Generate PIN'}
+                      {modalType === 'finalize' && 'PIN Generation'}
+                      {modalType === 'unlock' && 'PIN Required'}
                    </h2>
                    <p style={{color: 'var(--text-secondary)'}}>
-                      {modalType === 'accept' && 'Generate your half of the permanent encryption lock. Never share this with anyone.'}
-                      {modalType === 'finalize' && 'Generate your half of the encryption lock to seal this vault permanently.'}
-                      {modalType === 'unlock' && 'Enter your confidential 4-Digit sequence. Both parties must be online.'}
+                      {modalType === 'accept' && 'Generate your half of the permanent encryption lock. Never share this with anyone and "Remember this PIN"'}
+                      {modalType === 'finalize' && 'Generate your half of the encryption PIN to Create a password for this Dark Space and "Remember this PIN"'}
+                      {modalType === 'unlock' && 'Enter your confidential 4-Digit PIN which is created for this User. Both Users must be online.'}
                    </p>
 
                    {error && <div style={{color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)', marginTop: '1rem'}}>{error}</div>}
@@ -575,7 +575,7 @@ export default function DarkRoom() {
                    <div className="modal-actions">
                       <button type="button" className="btn-cancel" onClick={closeModal}>Cancel</button>
                       <button type="submit" className="btn-cyber">
-                        {modalType === 'unlock' ? 'Execute Turn-Key' : 'Engage Lock'}
+                        {modalType === 'unlock' ? 'Enter' : 'Generate'}
                       </button>
                    </div>
                 </form>
@@ -588,13 +588,13 @@ export default function DarkRoom() {
         <div className="darkroom-chat-view" style={{display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0}}>
           <div className="messages-area glass-panel darkroom-messages" style={{flex: 1, overflowY: 'auto', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(139, 92, 246, 0.2)', padding: '1rem', display: 'flex', flexDirection: 'column'}}>
               <div className="encryption-notice">
-                <Key size={14} /> DUAL-KEY SECURITY ENGAGED. ENCRYPTION PROTOCOLS NORMAL.
+               ⚠ If you EXIT from this Space, the other session will close.
               </div>
               {messages.length === 0 ? (
                 <div className="empty-chat animate-fade-in" style={{textAlign: 'center', marginTop: '2rem'}}>
                   <Shield size={64} className="faded-icon" />
-                  <h3 style={{color: 'white'}}>Vault Breach Successful</h3>
-                  <p style={{color: 'var(--text-secondary)'}}>System architecture permanently secured.</p>
+                  <h3 style={{color: 'white'}}> Dark Space Active</h3>
+                  <p style={{color: 'var(--text-secondary)'}}>Your Chat is Secured.</p>
                 </div>
               ) : (
                 messages.map((msg, index) => {
@@ -672,7 +672,7 @@ export default function DarkRoom() {
             )}
 
             {!isRecording && !audioBlobPreview && (
-                <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="Transmit strictly secure data..." style={{flex:1, background: 'transparent', border:'none', color:'white', fontSize: '1rem'}} />
+                <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="Type Message..." style={{flex:1, background: 'transparent', border:'none', color:'white', fontSize: '1rem'}} />
             )}
             
             <button type="submit" className="btn-cyber" style={{padding: '0.5rem 1rem'}} disabled={(!messageInput.trim() && !audioBlobPreview) || isRecording}>

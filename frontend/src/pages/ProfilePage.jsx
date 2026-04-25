@@ -15,7 +15,7 @@ export default function ProfilePage() {
   
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', gender: '', dob: '', email: '', mobileNumber: '',
-    profilePicture: '', isProfilePhotoPublic: true, allowIncomingRequests: true
+    profilePicture: '', profileVisibility: 'ALL', allowIncomingRequests: true
   });
 
   const fetchProfile = async () => {
@@ -41,7 +41,7 @@ export default function ProfilePage() {
         gender: profile.gender || '',
         dob: profile.dob || '',
         profilePicture: profile.profilePicture || '',
-        isProfilePhotoPublic: profile.profilePhotoPublic !== false,
+        profileVisibility: profile.profileVisibility || 'ALL',
         allowIncomingRequests: profile.allowIncomingRequests !== false
       });
     }
@@ -82,22 +82,48 @@ export default function ProfilePage() {
     handleSaveProfile(newData);
   };
 
-  const handleEmailChange = async (e) => {
+  const [emailOtp, setEmailOtp] = useState('');
+  const [isEmailOtpSent, setIsEmailOtpSent] = useState(false);
+
+  const handleEmailChangeRequest = async (e) => {
       e.preventDefault();
       if (formData.email === profile.email) {
           toast.info("New email is same as current.");
           return;
       }
       setIsUpdating(true);
-      toast.info('Verification OTP sent to old email address.');
-      setTimeout(async () => {
-          try {
-              await api.put('/users/profile', { ...formData, email: formData.email });
-              toast.success('Email signature updated successfully.');
-              fetchProfile();
-          } catch(e) { toast.error('Email change failed'); }
-          finally { setIsUpdating(false); }
-      }, 2000);
+      try {
+          await api.post('/users/request-email-change');
+          setIsEmailOtpSent(true);
+          toast.success('Verification OTP sent to your current email address.');
+      } catch (err) {
+          toast.error('Failed to request email change.');
+      } finally {
+          setIsUpdating(false);
+      }
+  };
+
+  const handleVerifyEmailChange = async (e) => {
+      e.preventDefault();
+      if (!emailOtp) {
+          toast.error("Please enter the OTP.");
+          return;
+      }
+      setIsUpdating(true);
+      try {
+          await api.post('/users/verify-email-change', {
+              otp: emailOtp,
+              newEmail: formData.email
+          });
+          toast.success('Email signature updated successfully.');
+          setIsEmailOtpSent(false);
+          setEmailOtp('');
+          fetchProfile();
+      } catch(err) { 
+          toast.error(err.response?.data || 'Email change failed. Invalid OTP.');
+      } finally { 
+          setIsUpdating(false); 
+      }
   };
 
   const handlePhotoUpload = (e) => {
@@ -250,15 +276,29 @@ export default function ProfilePage() {
              <div className="animate-fade-in">
                 <h3 style={{fontSize: '1.5rem', marginBottom: '1.5rem'}}>Privacy Shield</h3>
                 <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                   <div style={{padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                      <div>
-                         <h4 style={{marginBottom: '4px'}}>Public Identity</h4>
-                         <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>Broadcast your profile avatar in the global peer search ecosystem.</p>
+                   <div style={{padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--border)'}}>
+                      <div style={{marginBottom: '1rem'}}>
+                         <h4 style={{marginBottom: '4px'}}>Profile Visibility</h4>
+                         <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>Choose who can see your profile and avatar.</p>
                       </div>
-                      <label className="toggle-switch">
-                         <input type="checkbox" checked={formData.isProfilePhotoPublic} onChange={e => handleTogglePrivacy('isProfilePhotoPublic', e.target.checked)} />
-                         <span className="slider round"></span>
-                      </label>
+                      <div style={{display: 'flex', flexDirection: 'column', gap: '0.8rem'}}>
+                          <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: formData.profileVisibility === 'ALL' ? '1px solid var(--accent-primary)' : '1px solid transparent'}}>
+                             <input type="radio" name="profileVisibility" value="ALL" checked={formData.profileVisibility === 'ALL'} onChange={e => handleTogglePrivacy('profileVisibility', e.target.value)} style={{accentColor: 'var(--accent-primary)', width: '18px', height: '18px'}} />
+                             <span style={{color: 'var(--text-primary)'}}>For all users</span>
+                          </label>
+                          <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: formData.profileVisibility === 'CONNECTED' ? '1px solid var(--accent-primary)' : '1px solid transparent'}}>
+                             <input type="radio" name="profileVisibility" value="CONNECTED" checked={formData.profileVisibility === 'CONNECTED'} onChange={e => handleTogglePrivacy('profileVisibility', e.target.value)} style={{accentColor: 'var(--accent-primary)', width: '18px', height: '18px'}} />
+                             <span style={{color: 'var(--text-primary)'}}>Only connected users</span>
+                          </label>
+                          <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: formData.profileVisibility === 'SPECIFIC' ? '1px solid var(--accent-primary)' : '1px solid transparent'}}>
+                             <input type="radio" name="profileVisibility" value="SPECIFIC" checked={formData.profileVisibility === 'SPECIFIC'} onChange={e => handleTogglePrivacy('profileVisibility', e.target.value)} style={{accentColor: 'var(--accent-primary)', width: '18px', height: '18px'}} />
+                             <span style={{color: 'var(--text-primary)'}}>Specific users</span>
+                          </label>
+                          <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: formData.profileVisibility === 'NONE' ? '1px solid var(--accent-primary)' : '1px solid transparent'}}>
+                             <input type="radio" name="profileVisibility" value="NONE" checked={formData.profileVisibility === 'NONE'} onChange={e => handleTogglePrivacy('profileVisibility', e.target.value)} style={{accentColor: 'var(--accent-primary)', width: '18px', height: '18px'}} />
+                             <span style={{color: 'var(--text-primary)'}}>No one</span>
+                          </label>
+                      </div>
                    </div>
 
                    <div style={{padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
@@ -288,15 +328,30 @@ export default function ProfilePage() {
              <div className="animate-fade-in" style={{maxWidth: '500px'}}>
                 <h3 style={{fontSize: '1.5rem', marginBottom: '1rem'}}>Email Signature</h3>
                 <p style={{color: 'var(--text-secondary)', marginBottom: '2rem'}}>Changing your email requires authorization from your current address.</p>
-                <form onSubmit={handleEmailChange} style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                   <div className="form-group">
-                      <label>New Email Address</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleChange} required />
-                   </div>
-                   <button type="submit" className="btn-primary" style={{padding: '1rem'}} disabled={isUpdating}>
-                      Initiate Verification
-                   </button>
-                </form>
+                {!isEmailOtpSent ? (
+                    <form onSubmit={handleEmailChangeRequest} style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+                       <div className="form-group">
+                          <label>New Email Address</label>
+                          <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+                       </div>
+                       <button type="submit" className="btn-primary" style={{padding: '1rem'}} disabled={isUpdating}>
+                          Initiate Verification
+                       </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleVerifyEmailChange} style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+                       <div className="form-group">
+                          <label>Enter OTP sent to {profile.email}</label>
+                          <input type="text" value={emailOtp} onChange={e => setEmailOtp(e.target.value)} required />
+                       </div>
+                       <button type="submit" className="btn-primary" style={{padding: '1rem'}} disabled={isUpdating}>
+                          Verify and Update Email
+                       </button>
+                       <button type="button" className="btn-secondary" onClick={() => setIsEmailOtpSent(false)} disabled={isUpdating} style={{padding: '1rem', width: '100%', borderRadius: '10px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-primary)'}}>
+                          Cancel
+                       </button>
+                    </form>
+                )}
              </div>
           )}
 

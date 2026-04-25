@@ -10,6 +10,7 @@ import com.securechat.backend.models.User;
 import com.securechat.backend.repository.ChatRequestRepository;
 import com.securechat.backend.repository.MessageRepository;
 import com.securechat.backend.repository.UserRepository;
+import com.securechat.backend.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class MessageService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final OnlineStatusService onlineStatusService;
+    private final EncryptionUtil encryptionUtil;
 
     public ChatMessageResponse saveMessage(String senderUsername, MessageDto messageDto) {
         User sender = userRepository.findByUsername(senderUsername)
@@ -53,7 +55,7 @@ public class MessageService {
         Message message = Message.builder()
                 .chatRequest(chatRequest)
                 .sender(sender)
-                .content(messageDto.getContent())
+                .content(encryptionUtil.encrypt(messageDto.getContent()))
                 .messageType(messageDto.getType() != null ? messageDto.getType() : com.securechat.backend.enums.MessageType.TEXT)
                 .status(isReceiverOnline ? MessageStatus.DELIVERED : MessageStatus.SENT)
                 .evaporateTime(messageDto.getEvaporateTime())
@@ -143,7 +145,7 @@ public class MessageService {
                 .id(message.getId())
                 .chatRequestId(message.getChatRequest().getId())
                 .senderUsername(message.getSender().getUsername())
-                .content(message.getContent())
+                .content(encryptionUtil.decrypt(message.getContent()))
                 .messageType(message.getMessageType())
                 .status(message.getStatus())
                 .evaporateTime(message.getEvaporateTime())

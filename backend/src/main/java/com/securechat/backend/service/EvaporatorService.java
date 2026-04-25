@@ -7,6 +7,7 @@ import com.securechat.backend.models.EvaporatorMessage;
 import com.securechat.backend.models.User;
 import com.securechat.backend.repository.EvaporatorMessageRepository;
 import com.securechat.backend.repository.UserRepository;
+import com.securechat.backend.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class EvaporatorService {
     private final EvaporatorMessageRepository evaporatorMessageRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final EncryptionUtil encryptionUtil;
 
     public ChatMessageResponse saveMessage(String senderUsername, String recipientUsername, String content, MessageType type, Integer evaporateTime) {
         User sender = userRepository.findByUsername(senderUsername).orElseThrow();
@@ -32,7 +34,7 @@ public class EvaporatorService {
         EvaporatorMessage message = EvaporatorMessage.builder()
                 .sender(sender)
                 .recipient(recipient)
-                .content(content)
+                .content(encryptionUtil.encrypt(content))
                 .messageType(type != null ? type : MessageType.TEXT)
                 .status(MessageStatus.SENT)
                 .evaporateTime(evaporateTime)
@@ -86,7 +88,7 @@ public class EvaporatorService {
         return ChatMessageResponse.builder()
                 .id(message.getId())
                 .senderUsername(message.getSender().getUsername())
-                .content(message.getContent())
+                .content(encryptionUtil.decrypt(message.getContent()))
                 .messageType(message.getMessageType())
                 .status(message.getStatus())
                 .evaporateTime(message.getEvaporateTime())

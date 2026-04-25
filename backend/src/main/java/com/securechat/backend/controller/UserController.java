@@ -17,6 +17,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final com.securechat.backend.service.OnlineStatusService onlineService;
+    private final com.securechat.backend.service.OTPService otpService;
 
     @GetMapping("/search")
     public ResponseEntity<List<com.securechat.backend.dto.UserPublicProfileDto>> searchUsers(@RequestParam String q, java.security.Principal principal) {
@@ -31,7 +32,7 @@ public class UserController {
                 .limit(10)
                 .map(u -> com.securechat.backend.dto.UserPublicProfileDto.builder()
                     .username(u.getUsername())
-                    .profilePicture(u.isProfilePhotoPublic() ? u.getProfilePicture() : null)
+                    .profilePicture("ALL".equals(u.getProfileVisibility()) || "CONNECTED".equals(u.getProfileVisibility()) ? u.getProfilePicture() : null)
                     .allowIncomingRequests(u.isAllowIncomingRequests())
                     .trustBreakCount(u.getTrustBreakCount())
                     .successfulConnectionsCount(u.getSuccessfulConnectionsCount())
@@ -46,7 +47,7 @@ public class UserController {
         return userRepository.findByUsername(username).map(u -> {
             com.securechat.backend.dto.UserPublicProfileDto dto = com.securechat.backend.dto.UserPublicProfileDto.builder()
                 .username(u.getUsername())
-                .profilePicture(u.isProfilePhotoPublic() ? u.getProfilePicture() : null)
+                .profilePicture("ALL".equals(u.getProfileVisibility()) || "CONNECTED".equals(u.getProfileVisibility()) ? u.getProfilePicture() : null)
                 .allowIncomingRequests(u.isAllowIncomingRequests())
                 .trustBreakCount(u.getTrustBreakCount())
                 .successfulConnectionsCount(u.getSuccessfulConnectionsCount())
@@ -82,7 +83,7 @@ public class UserController {
                 .email(user.getEmail())
                 .mobileNumber(user.getMobileNumber())
                 .profilePicture(user.getProfilePicture())
-                .profilePhotoPublic(user.isProfilePhotoPublic())
+                .profileVisibility(user.getProfileVisibility())
                 .allowIncomingRequests(user.isAllowIncomingRequests())
                 .trustBreakCount(user.getTrustBreakCount())
                 .successfulConnectionsCount(user.getSuccessfulConnectionsCount())
@@ -106,8 +107,8 @@ public class UserController {
         if (updates.containsKey("profilePicture")) {
             user.setProfilePicture((String) updates.get("profilePicture"));
         }
-        if (updates.containsKey("isProfilePhotoPublic")) {
-            user.setProfilePhotoPublic((Boolean) updates.get("isProfilePhotoPublic"));
+        if (updates.containsKey("profileVisibility")) {
+            user.setProfileVisibility((String) updates.get("profileVisibility"));
         }
         if (updates.containsKey("allowIncomingRequests")) {
             user.setAllowIncomingRequests((Boolean) updates.get("allowIncomingRequests"));
@@ -135,5 +136,38 @@ public class UserController {
         user.setPassword(encoder.encode(newPass));
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Password securely updated"));
+    }
+
+    @PostMapping("/request-email-change")
+    public ResponseEntity<?> requestEmailChange(java.security.Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        otpService.generateAndSendOTP(user.getEmail(), "EMAIL");
+        return ResponseEntity.ok(Map.of("message", "OTP sent to current email address"));
+    }
+
+    @PostMapping("/verify-email-change")
+    public ResponseEntity<?> verifyEmailChange(java.security.Principal principal, @RequestBody Map<String, String> request) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        String otp = request.get("otp");
+        String newEmail = request.get("newEmail");
+        
+        if (otp == null || newEmail == null) {
+            return ResponseEntity.badRequest().body("OTP and newEmail are required");
+        }
+        
+        if (otpService.verifyOTP(user.getEmail(), otp)) {
+            user.setEmail(newEmail);
+            userRepository.save(user);
+            otpService.clearOTP(user.getEmail());
+            return ResponseEntity.ok(Map.of("message", "Email successfully updated"));
+        } else {
+            return ResponseEntity.badRequest().body("Invalid or expired OTP");
+        }
     }
 }
