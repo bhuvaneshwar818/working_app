@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`,
+  baseURL: 'https://securechat-backend-ys13.onrender.com/api',
 });
 
 api.interceptors.request.use(config => {
