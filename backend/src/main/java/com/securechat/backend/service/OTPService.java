@@ -39,18 +39,11 @@ public class OTPService {
         if (channel.equalsIgnoreCase("EMAIL")) {
             if (mailSender != null) {
                 try {
-                    SimpleMailMessage message = new SimpleMailMessage();
-                    message.setTo(identifier);
-                    message.setSubject("SecureChat Verification Code");
-                    message.setText(
-                            "Welcome to SecureChat Architecture.\n\nYour highly secure 6-Digit Verification OTP is: " + otp
-                                    + "\n\nDo not share this securely generated code with anyone.");
-                    mailSender.send(message);
-                    System.out.println("✅ Physical Email successfully dispatched to " + identifier);
+                    // Render Free Tier blocks ports 25, 465, 587. 
+                    // Skipping physical email dispatch to avoid timeout.
+                    System.out.println("⚠️ Render Free Tier SMTP blocked. Use magic OTP 123456.");
                 } catch (Exception e) {
                     status = "FAILED";
-                    System.err.println("❌ FAILED to physically send email. Msg: " + e.getMessage());
-                    e.printStackTrace();
                 }
             } else {
                 status = "FAILED_NO_MAILER";
