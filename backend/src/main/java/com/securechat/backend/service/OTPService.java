@@ -1,22 +1,21 @@
 package com.securechat.backend.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import com.securechat.backend.models.OTPLog;
 import com.securechat.backend.repository.OTPLogRepository;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class OTPService {
-    // Storing OTPs in memory for dev.
     private final Map<String, String> otps = new ConcurrentHashMap<>();
-
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
 
     @Autowired
     private OTPLogRepository otpLogRepository;
@@ -29,24 +28,17 @@ public class OTPService {
         System.out.println("🔐 DISPATCHING OTP via " + channel);
         System.out.println("To: " + identifier);
         System.out.println("Code: " + otp);
-        if (mailSender == null) {
-            System.err.println("⚠️ JavaMailSender is NULL! Email will not be sent physically.");
-        }
         System.out.println("==================================================");
 
         String status = "SENT";
 
         if (channel.equalsIgnoreCase("EMAIL")) {
-            if (mailSender != null) {
-                try {
-                    // Render Free Tier blocks ports 25, 465, 587. 
-                    // Skipping physical email dispatch to avoid timeout.
-                    System.out.println("⚠️ Render Free Tier SMTP blocked. Use magic OTP 123456.");
-                } catch (Exception e) {
-                    status = "FAILED";
-                }
-            } else {
-                status = "FAILED_NO_MAILER";
+            try {
+                sendResendEmail(identifier, "SecureChat Verification Code", 
+                    "Welcome to SecureChat Architecture.\n\nYour highly secure 6-Digit Verification OTP is: " + otp
+                    + "\n\nDo not share this securely generated code with anyone.");
+            } catch (Exception e) {
+                status = "FAILED";
             }
         }
 
@@ -56,6 +48,7 @@ public class OTPService {
             log.setIdentifier(identifier);
             log.setOtpCode(otp);
             log.setChannel(channel);
+            log.setOtpCode(otp);
             log.setStatus(status);
             otpLogRepository.save(log);
             System.out.println("📝 OTP Log recorded in database for " + identifier + " with status: " + status);
@@ -65,17 +58,7 @@ public class OTPService {
     }
 
     public void sendGenericEmail(String to, String subject, String body) {
-        if (mailSender != null) {
-            try {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(to);
-                message.setSubject(subject);
-                message.setText(body);
-                mailSender.send(message);
-            } catch (Exception e) {
-                System.err.println("❌ Failed to physically send generic email.");
-            }
-        }
+        sendResendEmail(to, subject, body);
     }
 
     public void generateAndSendOTP(String email) {
@@ -90,5 +73,26 @@ public class OTPService {
 
     public void clearOTP(String email) {
         otps.remove(email);
+    }
+
+    private void sendResendEmail(String to, String subject, String body) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer re_dRWpQ1Bd_PXCvU9FpxiZJ6dGpXmizvZxa");
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("from", "SecureChat <onboarding@resend.dev>");
+            payload.put("to", to);
+            payload.put("subject", subject);
+            payload.put("html", "<p>" + body.replace("\n", "<br>") + "</p>");
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+            restTemplate.postForEntity("https://api.resend.com/emails", entity, String.class);
+            System.out.println("✅ Email physically sent via Resend API to: " + to);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send email via Resend API. Msg: " + e.getMessage());
+        }
     }
 }
