@@ -34,7 +34,7 @@ public class OTPService {
 
         if (channel.equalsIgnoreCase("EMAIL")) {
             try {
-                sendResendEmail(identifier, "SecureChat Verification Code", 
+                sendBrevoEmail(identifier, "SecureChat Verification Code", 
                     "Welcome to SecureChat Architecture.\n\nYour highly secure 6-Digit Verification OTP is: " + otp
                     + "\n\nDo not share this securely generated code with anyone.");
             } catch (Exception e) {
@@ -48,7 +48,6 @@ public class OTPService {
             log.setIdentifier(identifier);
             log.setOtpCode(otp);
             log.setChannel(channel);
-            log.setOtpCode(otp);
             log.setStatus(status);
             otpLogRepository.save(log);
             System.out.println("📝 OTP Log recorded in database for " + identifier + " with status: " + status);
@@ -58,7 +57,7 @@ public class OTPService {
     }
 
     public void sendGenericEmail(String to, String subject, String body) {
-        sendResendEmail(to, subject, body);
+        sendBrevoEmail(to, subject, body);
     }
 
     public void generateAndSendOTP(String email) {
@@ -75,24 +74,33 @@ public class OTPService {
         otps.remove(email);
     }
 
-    private void sendResendEmail(String to, String subject, String body) {
+    private void sendBrevoEmail(String to, String subject, String body) {
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer re_dRWpQ1Bd_PXCvU9FpxiZJ6dGpXmizvZxa");
+            headers.set("Accept", "application/json");
+            headers.set("api-key", System.getenv("BREVO_API_KEY"));
+
+            Map<String, Object> sender = new HashMap<>();
+            sender.put("name", "SecureChat");
+            sender.put("email", "mbhuvaneshwarmbhuvaneshwar379@gmail.com");
+
+            Map<String, Object> recipient = new HashMap<>();
+            recipient.put("email", to);
+            recipient.put("name", "SecureChat User");
 
             Map<String, Object> payload = new HashMap<>();
-            payload.put("from", "SecureChat <onboarding@resend.dev>");
-            payload.put("to", to);
+            payload.put("sender", sender);
+            payload.put("to", java.util.Arrays.asList(recipient));
             payload.put("subject", subject);
-            payload.put("html", "<p>" + body.replace("\n", "<br>") + "</p>");
+            payload.put("htmlContent", "<html><body><p>" + body.replace("\n", "<br>") + "</p></body></html>");
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
-            restTemplate.postForEntity("https://api.resend.com/emails", entity, String.class);
-            System.out.println("✅ Email physically sent via Resend API to: " + to);
+            restTemplate.postForEntity("https://api.brevo.com/v3/smtp/email", entity, String.class);
+            System.out.println("✅ Real OTP successfully sent via Brevo API to: " + to);
         } catch (Exception e) {
-            System.err.println("❌ Failed to send email via Resend API. Msg: " + e.getMessage());
+            System.err.println("❌ Failed to physically send email via Brevo. Msg: " + e.getMessage());
         }
     }
 }
