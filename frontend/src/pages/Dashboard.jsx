@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, peerName: '' });
   const [isSearching, setIsSearching] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState('chats'); // 'chats' or 'feed'
 
   const myUsername = localStorage.getItem('username');
 
@@ -194,7 +195,7 @@ export default function Dashboard() {
   const { trustPercentage, untrustPercentage } = getStats();
 
   return (
-    <div className={`dashboard-container ${location.pathname.includes('/chat/') ? 'chat-active' : ''}`}>
+    <div className={`dashboard-container ${location.pathname.includes('/chat/') ? 'chat-active' : ''} mobile-tab-${activeMobileTab}`}>
       <aside className="sidebar glass-panel">
         <div className="sidebar-header" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', cursor: 'pointer'}} onClick={() => navigate('/dashboard')}>
           <Shield color="var(--accent-primary)" size={32} />
@@ -397,6 +398,24 @@ export default function Dashboard() {
           } />
         </Routes>
       </main>
+
+      {/* Mobile Bottom Tab Bar */}
+      <nav className="mobile-tab-bar">
+        <button 
+          className={activeMobileTab === 'chats' ? 'active' : ''} 
+          onClick={() => { setActiveMobileTab('chats'); navigate('/dashboard'); }}
+        >
+          <MessageSquare size={20} />
+          <span>Chats</span>
+        </button>
+        <button 
+          className={activeMobileTab === 'feed' ? 'active' : ''} 
+          onClick={() => { setActiveMobileTab('feed'); navigate('/dashboard'); }}
+        >
+          <UserPlus size={20} />
+          <span>Discover</span>
+        </button>
+      </nav>
 
       <ConfirmModal 
         isOpen={isLogoutModalOpen}

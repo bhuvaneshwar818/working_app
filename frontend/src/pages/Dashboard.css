@@ -320,4 +320,65 @@
     justify-content: center !important;
     gap: 1.5rem !important;
   }
+
+  /* Mobile Tab Visibility Logic */
+  .dashboard-container.mobile-tab-chats .sidebar {
+    display: flex !important;
+  }
+  .dashboard-container.mobile-tab-chats .dashboard-main {
+    display: none !important;
+  }
+  
+  .dashboard-container.mobile-tab-feed .sidebar {
+    display: none !important;
+  }
+  .dashboard-container.mobile-tab-feed .dashboard-main {
+    display: block !important;
+    padding-bottom: 80px !important; /* Prevent tab bar overlap */
+  }
+
+  /* Mobile bottom tab bar positioning */
+  .mobile-tab-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background: var(--bg-secondary) !important;
+    border-top: 1px solid var(--border);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+  }
+  
+  .mobile-tab-bar button {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex: 1;
+    height: 100%;
+    transition: all 0.2s;
+  }
+  
+  .mobile-tab-bar button.active {
+    color: var(--accent-primary);
+  }
+
+  /* Hide bottom tabs when actively in a private chat */
+  .dashboard-container.chat-active .mobile-tab-bar {
+    display: none !important;
+  }
+}
+
+/* Hide desktop tab defaults */
+.mobile-tab-bar {
+  display: none;
 }
