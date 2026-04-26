@@ -360,7 +360,7 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
 
       <form className="chat-input-area glass-panel" onSubmit={sendMessage} style={{borderRadius: '0', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)'}}>
         {!isRecording && !audioBlobPreview && (
-            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0}}>
+            <div className="chat-input-actions" style={{display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0}}>
                 <button type="button" onClick={() => setShowCameraMode(true)} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Camera Capture" disabled={!isConnected}>
                    <Camera size={18} />
                 </button>
@@ -381,18 +381,18 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
                      disabled={!isConnected} 
                    />
                 </label>
+
+                {isRecording ? (
+                   <button type="button" onClick={stopRecording} className="btn-icon blinking-mic" style={{color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none'}} title="Stop Recording">
+                      <Mic size={18} />
+                   </button>
+                ) : !audioBlobPreview ? (
+                   <button type="button" onClick={startRecording} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Record Audio" disabled={!isConnected}>
+                      <Mic size={18} />
+                   </button>
+                ) : null}
             </div>
         )}
-        
-        {isRecording ? (
-           <button type="button" onClick={stopRecording} className="btn-icon blinking-mic" style={{color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none'}} title="Stop Recording">
-              <Mic size={18} />
-           </button>
-        ) : !audioBlobPreview ? (
-           <button type="button" onClick={startRecording} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Record Audio" disabled={!isConnected}>
-              <Mic size={18} />
-           </button>
-        ) : null}
 
         {!isRecording && !audioBlobPreview && (
             <input 

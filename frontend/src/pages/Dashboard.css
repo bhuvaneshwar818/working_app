@@ -312,18 +312,6 @@
     text-align: center;
     margin-bottom: 1rem;
   }
-  
-  .dashboard-main div[style*="alignItems: center"] {
-    flex-direction: column !important;
-    text-align: center !important;
-    gap: 1rem !important;
-  }
-  
-  .dashboard-main div[style*="alignItems: center"] div[style*="display: flex"] {
-    flex-direction: row !important;
-    justify-content: center !important;
-    gap: 1.5rem !important;
-  }
 
   /* Mobile Tab Visibility Logic */
   .dashboard-container.mobile-tab-chats .sidebar {
