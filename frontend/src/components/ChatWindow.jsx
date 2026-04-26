@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Shield, Send, Lock, Mic, Square, Paperclip, Trash2, Camera, Check, CheckCheck, Smile, CornerUpLeft, ArrowLeft, MoreVertical, Pin, PinOff } from 'lucide-react';
+import { Shield, Send, Lock, Mic, Square, Paperclip, Trash2, Camera, Check, CheckCheck, Smile, CornerUpLeft, ArrowLeft, MoreVertical, Pin, PinOff, Plus } from 'lucide-react';
 import api from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import CameraCropper from '../components/CameraCropper';
@@ -17,6 +17,7 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
   const [peerName, setPeerName] = useState(initialPeerName || 'Secure Comm Link');
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [activeMessageOptions, setActiveMessageOptions] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -358,74 +359,95 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="chat-input-area glass-panel" onSubmit={sendMessage} style={{borderRadius: '0', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)'}}>
-        {!isRecording && !audioBlobPreview && (
-            <div className="chat-input-actions" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', flexShrink: 0}}>
-                <button type="button" onClick={() => setShowCameraMode(true)} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Camera Capture" disabled={!isConnected}>
-                   <Camera size={16} />
-                </button>
-                <label className="btn-icon" style={{cursor: 'pointer', background: 'rgba(255,255,255,0.05)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Upload Photo">
-                   <Paperclip size={16} />
-                   <input 
-                     type="file" 
-                     accept="image/*" 
-                     style={{display: 'none'}} 
-                     onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => sendMediaMessage(reader.result, 'IMAGE');
-                          reader.readAsDataURL(file);
-                        }
-                     }} 
-                     disabled={!isConnected} 
-                   />
-                </label>
-
-                {isRecording ? (
-                   <button type="button" onClick={stopRecording} className="btn-icon blinking-mic" style={{color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none'}} title="Stop Recording">
-                      <Mic size={16} />
-                   </button>
-                ) : !audioBlobPreview ? (
-                   <button type="button" onClick={startRecording} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Record Audio" disabled={!isConnected}>
-                      <Mic size={16} />
-                   </button>
-                ) : null}
-            </div>
+      <form className="chat-input-area glass-panel" onSubmit={sendMessage} style={{borderRadius: '0', padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.5rem', background: '#121b22', borderTop: '1px solid rgba(255,255,255,0.05)', position: 'relative'}}>
+        
+        {/* Attachment menu drawer overlay */}
+        {showAttachmentMenu && (
+          <div className="attachment-overlay-menu glass-panel" style={{position: 'absolute', bottom: '100%', left: '10px', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', borderRadius: '12px', background: '#233138', border: '1px solid rgba(255,255,255,0.1)', zIndex: 1001, marginBottom: '0.5rem'}}>
+             <button type="button" onClick={() => { setShowCameraMode(true); setShowAttachmentMenu(false); }} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'white'}} title="Camera Capture">
+                <Camera size={18} />
+             </button>
+             <label className="btn-icon" style={{cursor: 'pointer', background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'white'}} title="Upload Photo">
+                <Paperclip size={18} />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  style={{display: 'none'}} 
+                  onChange={(e) => {
+                     const file = e.target.files[0];
+                     if (file) {
+                       const reader = new FileReader();
+                       reader.onloadend = () => sendMediaMessage(reader.result, 'IMAGE');
+                       reader.readAsDataURL(file);
+                     }
+                     setShowAttachmentMenu(false);
+                  }} 
+                  disabled={!isConnected} 
+                />
+             </label>
+          </div>
         )}
 
+        {/* Far Left: Plus Trigger button */}
+        {!isRecording && !audioBlobPreview && (
+          <button type="button" onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} className="btn-icon" style={{background: 'none', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-secondary)'}} title="Attachments">
+             <Plus size={22} style={{transform: showAttachmentMenu ? 'rotate(45deg)' : 'rotate(0deg)', transition: '0.2s'}} />
+          </button>
+        )}
+
+        {/* Left-center: Emoji button */}
+        {!isRecording && !audioBlobPreview && (
+          <button type="button" className="btn-icon" style={{background: 'none', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-secondary)'}} title="Emojis">
+             <Smile size={22} />
+          </button>
+        )}
+
+        {/* Center: Input field */}
         {!isRecording && !audioBlobPreview && (
             <input 
               type="text" 
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              placeholder="Transmit a secure message..."
+              placeholder="Type a message"
               disabled={!isConnected}
-              style={{flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '0.75rem 1.25rem', borderRadius: '24px', color: 'white', fontSize: '0.95rem'}}
+              style={{flex: 1, background: '#2a3942', border: 'none', padding: '0.6rem 1rem', borderRadius: '8px', color: 'white', fontSize: '0.95rem'}}
             />
         )}
 
+        {/* Audio Recording State */}
         {isRecording && (
            <div style={{display: 'flex', alignItems: 'center', gap: '10px', flex: 1}}>
               <div style={{display: 'flex', gap: '4px', alignItems: 'center', height: '20px'}}>
                  {audioBands.map((h, i) => (
-                    <div key={i} style={{ width: '3px', background: 'var(--accent-primary)', borderRadius: '3px', height: `${h}px` }}></div>
+                    <div key={i} style={{ width: '3px', background: 'var(--success)', borderRadius: '3px', height: `${h}px` }}></div>
                  ))}
               </div>
               <span style={{color: 'var(--danger)', fontWeight: 'bold'}}>{formatTime(audioTimer)}</span>
            </div>
         )}
         
+        {/* Audio Preview State */}
         {audioBlobPreview && (
            <div style={{display: 'flex', alignItems: 'center', gap: '10px', flex: 1}}>
-              <button type="button" onClick={discardAudio} className="btn-icon"><Trash2 size={18} /></button>
+              <button type="button" onClick={discardAudio} className="btn-icon" style={{color: 'var(--danger)'}}><Trash2 size={18} /></button>
               <audio src={audioBlobPreview} controls style={{height: '35px', flex: 1}} />
            </div>
         )}
 
-        <button type="submit" className="btn-primary send-btn" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', flexShrink: 0}} disabled={(!messageInput.trim() && !audioBlobPreview) || !isConnected || isRecording}>
-          <Send size={18} />
-        </button>
+        {/* Far Right: Submit / Microphone button */}
+        {!isRecording && !audioBlobPreview && messageInput.trim() === '' ? (
+            <button type="button" onClick={startRecording} className="btn-icon" style={{background: 'none', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-secondary)'}} title="Record Audio" disabled={!isConnected}>
+               <Mic size={22} />
+            </button>
+        ) : isRecording ? (
+            <button type="button" onClick={stopRecording} className="btn-icon blinking-mic" style={{background: 'rgba(239, 68, 68, 0.1)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)'}} title="Stop Recording">
+               <Mic size={22} />
+            </button>
+        ) : (
+            <button type="submit" className="btn-primary send-btn" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', flexShrink: 0, background: 'none', border: 'none', color: 'var(--accent-primary)'}} disabled={!isConnected}>
+              <Send size={22} />
+            </button>
+        )}
       </form>
 
       {showCameraMode && <CameraCropper onClose={() => setShowCameraMode(false)} onSend={p => { sendMediaMessage(p, 'IMAGE'); setShowCameraMode(false); }} />}
