@@ -258,6 +258,10 @@
     background: var(--bg-secondary) !important;
   }
   
+  .sidebar-footer-options {
+    display: none !important;
+  }
+  
   .active-chats-list {
     max-height: 200px !important;
     margin-bottom: 1rem !important;
