@@ -95,7 +95,7 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
     if (!token || !chatRequestId) return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS(`http://${window.location.hostname}:8080/ws`),
+      webSocketFactory: () => new SockJS(`https://securechat-backend-ys13.onrender.com/ws`),
       connectHeaders: { Authorization: `Bearer ${token}` },
       debug: () => {},
       onConnect: () => {

@@ -78,7 +78,7 @@ export default function Dashboard() {
     let client = null;
     if (token) {
        client = new Client({
-         webSocketFactory: () => new SockJS(`http://${window.location.hostname}:8080/ws`),
+         webSocketFactory: () => new SockJS(`https://securechat-backend-ys13.onrender.com/ws`),
          connectHeaders: { Authorization: `Bearer ${token}` },
          onConnect: () => {
             client.subscribe('/user/queue/updates', (msg) => {
