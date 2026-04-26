@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, peerName: '' });
   const [isSearching, setIsSearching] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState('chats'); // 'chats' or 'feed'
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const myUsername = localStorage.getItem('username');
 
@@ -197,9 +198,14 @@ export default function Dashboard() {
   return (
     <div className={`dashboard-container ${location.pathname.includes('/chat/') ? 'chat-active' : ''} mobile-tab-${activeMobileTab}`}>
       <aside className="sidebar glass-panel">
-        <div className="sidebar-header" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', cursor: 'pointer'}} onClick={() => navigate('/dashboard')}>
-          <Shield color="var(--accent-primary)" size={32} />
-          <h2 style={{fontSize: '1.5rem', fontWeight: 'bold'}}>SecureChat</h2>
+        <div className="sidebar-header" style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}} onClick={() => navigate('/dashboard')}>
+            <Shield color="var(--accent-primary)" size={32} />
+            <h2 style={{fontSize: '1.5rem', fontWeight: 'bold'}}>SecureChat</h2>
+          </div>
+          <button className="mobile-menu-btn" onClick={() => setIsDrawerOpen(!isDrawerOpen)} style={{color: 'var(--text-primary)', padding: '5px', background: 'transparent', border: 'none'}}>
+            <MoreVertical size={24} />
+          </button>
         </div>
         
         <div className="sidebar-section">
@@ -301,6 +307,36 @@ export default function Dashboard() {
           </button>
         </div>
       </aside>
+
+      {/* Mobile slide-out drawer sheet */}
+      {isDrawerOpen && (
+        <div className="mobile-drawer-backdrop" onClick={() => setIsDrawerOpen(false)}>
+          <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem'}}>
+               <h3 style={{fontSize: '1.2rem', color: 'var(--text-primary)'}}>Control Center</h3>
+               <button onClick={() => setIsDrawerOpen(false)} style={{color: 'var(--text-primary)', fontSize: '1.5rem', background: 'none', border: 'none'}}>&times;</button>
+            </div>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+              <button className="btn-secondary" onClick={() => { navigate('/darkroom'); setIsDrawerOpen(false); }} style={{padding: '1rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.25)', width: '100%', display: 'flex', alignItems: 'center'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><ShieldAlert size={20} /> <span style={{fontWeight: 700}}>DARK SPACE</span></div>
+              </button>
+
+              <button className="btn-secondary" onClick={() => { navigate('/evaporator'); setIsDrawerOpen(false); }} style={{padding: '1rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.25)', width: '100%', display: 'flex', alignItems: 'center'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><Zap size={20} /> <span style={{fontWeight: 700}}>EVAPORATION MODE</span></div>
+              </button>
+
+              <button className="btn-secondary" onClick={() => { navigate('/profile'); setIsDrawerOpen(false); }} style={{padding: '1rem', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: '1px solid var(--border)', width: '100%', display: 'flex', alignItems: 'center'}}>
+                 <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><Settings size={20} /> <span style={{fontWeight: 700}}>SETTINGS</span></div>
+              </button>
+
+              <button className="btn-secondary" onClick={() => { localStorage.clear(); navigate('/auth'); }} style={{padding: '1rem', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: '1px solid var(--border)', width: '100%', display: 'flex', alignItems: 'center'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '0.8rem'}}><LogOut size={20} /> <span style={{fontWeight: 700}}>LOG OUT</span></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="dashboard-main" style={{padding: '0', background: 'transparent', height: '100vh', overflow: 'hidden'}}>
         <Routes>
