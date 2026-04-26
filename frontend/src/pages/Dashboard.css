@@ -238,3 +238,38 @@
   color: var(--danger);
   font-size: 0.9rem;
 }
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .sidebar {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--sidebar-border) !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    padding: 1rem !important;
+  }
+  .active-chats-list {
+    max-height: 200px !important;
+  }
+  .dashboard-main {
+    height: auto !important;
+    overflow: visible !important;
+    padding: 1rem !important;
+  }
+  .dashboard-main > div {
+    padding: 1rem 0 !important;
+  }
+  .dashboard-main div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+  .dashboard-main div[style*="display: flex"] {
+    flex-direction: column !important;
+  }
+}
