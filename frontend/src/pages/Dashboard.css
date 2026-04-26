@@ -242,34 +242,82 @@
 @media (max-width: 768px) {
   .dashboard-container {
     flex-direction: column !important;
-    height: auto !important;
-    overflow: visible !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: var(--bg-primary);
   }
+  
   .sidebar {
     width: 100% !important;
     height: auto !important;
-    min-height: auto !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--sidebar-border) !important;
-    backdrop-filter: none !important;
     box-shadow: none !important;
-    padding: 1rem !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 1.25rem !important;
+    background: var(--bg-secondary) !important;
   }
+  
   .active-chats-list {
     max-height: 200px !important;
+    margin-bottom: 1rem !important;
   }
+  
   .dashboard-main {
+    width: 100% !important;
     height: auto !important;
     overflow: visible !important;
-    padding: 1rem !important;
+    padding: 1.5rem 1rem !important;
   }
-  .dashboard-main > div {
-    padding: 1rem 0 !important;
+  
+  /* Mobile Focus: Hide Sidebar entirely when in a direct chat */
+  .dashboard-container.chat-active .sidebar {
+    display: none !important;
   }
-  .dashboard-main div[style*="gridTemplateColumns"] {
+  
+  .dashboard-container.chat-active .dashboard-main {
+    padding: 0 !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Force Grid elements to fill row instead of squishing side-by-side */
+  .dashboard-main div[style*="display: grid"] {
     grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
   }
+  
   .dashboard-main div[style*="display: flex"] {
     flex-direction: column !important;
+    gap: 1.25rem !important;
+    align-items: stretch !important;
+  }
+
+  .dashboard-main section {
+    width: 100% !important;
+  }
+  
+  /* Center profile cards cleanly on tiny screens */
+  .dashboard-main header h1 {
+    font-size: 1.8rem !important;
+    text-align: center;
+  }
+  .dashboard-main header p {
+    font-size: 0.9rem !important;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  
+  .dashboard-main div[style*="alignItems: center"] {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 1rem !important;
+  }
+  
+  .dashboard-main div[style*="alignItems: center"] div[style*="display: flex"] {
+    flex-direction: row !important;
+    justify-content: center !important;
+    gap: 1.5rem !important;
   }
 }

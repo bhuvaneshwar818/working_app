@@ -194,7 +194,7 @@ export default function Dashboard() {
   const { trustPercentage, untrustPercentage } = getStats();
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${location.pathname.includes('/chat/') ? 'chat-active' : ''}`}>
       <aside className="sidebar glass-panel">
         <div className="sidebar-header" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', cursor: 'pointer'}} onClick={() => navigate('/dashboard')}>
           <Shield color="var(--accent-primary)" size={32} />
