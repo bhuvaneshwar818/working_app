@@ -335,7 +335,7 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
           </div>
         ) : (
           messages.map((msg, i) => {
-            const isMe = msg.senderUsername === username;
+            const isMe = msg.senderUsername && username && msg.senderUsername.toLowerCase() === username.toLowerCase();
             return (
               <div key={i} className={`message-wrapper ${isMe ? 'message-right' : 'message-left'} animate-fade-in`}>
                 <div className={`message-bubble ${isMe ? 'bubble-me' : 'bubble-them'}`} style={{position: 'relative'}} onContextMenu={(e) => { e.preventDefault(); setActiveMessageOptions(msg.id); }}>
@@ -358,13 +358,13 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="chat-input-area glass-panel" onSubmit={sendMessage} style={{borderRadius: '0', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+      <form className="chat-input-area glass-panel" onSubmit={sendMessage} style={{borderRadius: '0', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)'}}>
         {!isRecording && !audioBlobPreview && (
-            <div style={{display: 'flex', gap: '0.25rem'}}>
-                <button type="button" onClick={() => setShowCameraMode(true)} className="btn-icon" title="Camera Capture" disabled={!isConnected}>
+            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0}}>
+                <button type="button" onClick={() => setShowCameraMode(true)} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Camera Capture" disabled={!isConnected}>
                    <Camera size={18} />
                 </button>
-                <label className="btn-icon" style={{cursor: 'pointer', padding: '8px'}} title="Upload Photo">
+                <label className="btn-icon" style={{cursor: 'pointer', background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Upload Photo">
                    <Paperclip size={18} />
                    <input 
                      type="file" 
@@ -385,11 +385,11 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
         )}
         
         {isRecording ? (
-           <button type="button" onClick={stopRecording} className="btn-icon blinking-mic" style={{color: 'var(--danger)'}} title="Stop Recording">
+           <button type="button" onClick={stopRecording} className="btn-icon blinking-mic" style={{color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none'}} title="Stop Recording">
               <Mic size={18} />
            </button>
         ) : !audioBlobPreview ? (
-           <button type="button" onClick={startRecording} className="btn-icon" title="Record Audio" disabled={!isConnected}>
+           <button type="button" onClick={startRecording} className="btn-icon" style={{background: 'rgba(255,255,255,0.05)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--text-primary)'}} title="Record Audio" disabled={!isConnected}>
               <Mic size={18} />
            </button>
         ) : null}
@@ -401,7 +401,7 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
               onChange={(e) => setMessageInput(e.target.value)}
               placeholder="Transmit a secure message..."
               disabled={!isConnected}
-              style={{flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '0.6rem 1rem', borderRadius: '8px', color: 'white'}}
+              style={{flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '0.75rem 1.25rem', borderRadius: '24px', color: 'white', fontSize: '0.95rem'}}
             />
         )}
 
@@ -423,7 +423,7 @@ export default function ChatWindow({ peerName: initialPeerName, onBack }) {
            </div>
         )}
 
-        <button type="submit" className="btn-primary send-btn" disabled={(!messageInput.trim() && !audioBlobPreview) || !isConnected || isRecording}>
+        <button type="submit" className="btn-primary send-btn" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', flexShrink: 0}} disabled={(!messageInput.trim() && !audioBlobPreview) || !isConnected || isRecording}>
           <Send size={18} />
         </button>
       </form>
