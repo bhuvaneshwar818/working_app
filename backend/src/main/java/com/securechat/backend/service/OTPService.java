@@ -82,7 +82,7 @@ public class OTPService {
             headers.set("Authorization", "Bearer " + System.getenv("RESEND_API_KEY"));
 
             Map<String, Object> payload = new HashMap<>();
-            payload.put("from", "onboarding@resend.dev");
+            payload.put("from", "noreply@thedarkroom.in");
             payload.put("to", to);
             payload.put("subject", subject);
             payload.put("html", "<html><body><p>" + body.replace("\n", "<br>") + "</p></body></html>");
